@@ -6,11 +6,11 @@
     },
     {
       "path": "/api/cron/update-results",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 7 * * *"
     },
     {
       "path": "/api/cron/notify-upcoming",
-      "schedule": "*/30 * * * *"
+      "schedule": "0 8 * * *"
     }
   ]
 }
