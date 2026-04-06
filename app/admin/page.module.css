@@ -1,0 +1,300 @@
+.container {
+  min-height: 100vh;
+  background: #0a0a0f;
+  color: #f0f0f5;
+  padding: 24px 16px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* ── Auth gate ── */
+.authGate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 16px;
+}
+
+.authTitle {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.authInput {
+  width: 280px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: #13131a;
+  color: #f0f0f5;
+  font-size: 14px;
+  outline: none;
+}
+
+.authBtn {
+  width: 280px;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: #0052ff;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.authError {
+  color: #ff4d4d;
+  font-size: 13px;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.signOut {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: transparent;
+  color: #888;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* ── League block ── */
+.leagueBlock {
+  background: #13131a;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.leagueHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  cursor: pointer;
+  user-select: none;
+  width: 100%;
+  background: none;
+  border: none;
+  color: inherit;
+  text-align: left;
+}
+
+.leagueInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.leagueName {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.leagueMeta {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.sportBadge {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(0,82,255,0.15);
+  color: #4d8aff;
+  border: 1px solid rgba(0,82,255,0.25);
+}
+
+.chevron {
+  color: #555;
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+/* ── Sync row ── */
+.syncRow {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.select {
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: #0a0a0f;
+  color: #f0f0f5;
+  font-size: 13px;
+  outline: none;
+}
+
+.syncBtn {
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: none;
+  background: #0052ff;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.syncBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.syncMsg {
+  font-size: 12px;
+  color: #00c853;
+}
+
+.syncErr {
+  font-size: 12px;
+  color: #ff4d4d;
+}
+
+/* ── Matches table ── */
+.matchesTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.matchesTable th {
+  text-align: left;
+  font-size: 11px;
+  color: #555;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.02);
+}
+
+.matchRow {
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.matchRow td {
+  padding: 10px 16px;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.teams {
+  font-weight: 500;
+}
+
+.matchDate {
+  color: #666;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.statusUpcoming { background: rgba(255,255,255,0.06); color: #888; }
+.statusLive     { background: rgba(255,77,77,0.15);   color: #ff4d4d; }
+.statusFinished { background: rgba(0,200,83,0.12);    color: #00c853; }
+
+/* ── Result form ── */
+.resultCell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.outcomeBtn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: transparent;
+  color: #aaa;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.outcomeBtn:hover    { background: rgba(255,255,255,0.07); color: #fff; }
+.outcomeBtnActive    { background: #0052ff; border-color: #0052ff; color: #fff; }
+.outcomeBtnWin       { background: rgba(0,200,83,0.15); border-color: rgba(0,200,83,0.3); color: #00c853; }
+
+.scoreInput {
+  width: 48px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: #0a0a0f;
+  color: #f0f0f5;
+  font-size: 12px;
+  text-align: center;
+  outline: none;
+}
+
+.confirmBtn {
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: none;
+  background: #00c853;
+  color: #000;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.confirmBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.resultDone {
+  font-size: 12px;
+  color: #00c853;
+  font-weight: 600;
+}
+
+.empty {
+  padding: 20px 16px;
+  color: #555;
+  font-size: 13px;
+  text-align: center;
+}
+
+.loading {
+  padding: 16px;
+  color: #555;
+  font-size: 13px;
+  text-align: center;
+}

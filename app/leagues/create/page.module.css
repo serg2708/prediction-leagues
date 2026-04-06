@@ -1,0 +1,372 @@
+/* ── Layout ──────────────────────────────────────────────── */
+.container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #0a0a0f;
+  color: #f0f0f5;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.back {
+  background: rgba(255, 255, 255, 0.07);
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+/* ── Progress ────────────────────────────────────────────── */
+.progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 24px 8px;
+  gap: 0;
+}
+
+.progressItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.progressDot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: #555;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.progressActive {
+  border-color: #0052ff;
+  background: #0052ff;
+  color: #fff;
+}
+
+.progressDone {
+  border-color: #00c853;
+  background: #00c853;
+  color: #fff;
+}
+
+.progressLabel {
+  font-size: 12px;
+  color: #555;
+  white-space: nowrap;
+}
+
+.progressLabelActive {
+  color: #ccc;
+  font-weight: 600;
+}
+
+.progressLine {
+  width: 32px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0 4px;
+}
+
+.progressLineDone {
+  background: #00c853;
+}
+
+/* ── Body ────────────────────────────────────────────────── */
+.body {
+  flex: 1;
+  padding: 24px 16px;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stepTitle {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+
+.stepDesc {
+  font-size: 14px;
+  color: #666;
+  margin-top: -10px;
+}
+
+/* ── Name input ──────────────────────────────────────────── */
+.input {
+  width: 100%;
+  background: #13131a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 16px;
+  color: #fff;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.input:focus {
+  border-color: #0052ff;
+}
+
+.input::placeholder {
+  color: #444;
+}
+
+.charCount {
+  font-size: 12px;
+  color: #444;
+  align-self: flex-end;
+  margin-top: -10px;
+}
+
+/* ── Sport cards ─────────────────────────────────────────── */
+.sportGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sportCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: #13131a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.sportCardActive {
+  border-color: #0052ff;
+  background: rgba(0, 82, 255, 0.1);
+}
+
+.sportEmoji {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.sportLabel {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  display: block;
+}
+
+.sportDesc {
+  font-size: 12px;
+  color: #666;
+  display: block;
+  margin-top: 2px;
+}
+
+/* ── Entry fee grid ──────────────────────────────────────── */
+.feeGrid {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.feeBtn {
+  flex: 1;
+  min-width: 60px;
+  padding: 14px 8px;
+  background: #13131a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: #aaa;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.feeBtnActive {
+  background: rgba(0, 82, 255, 0.15);
+  border-color: #0052ff;
+  color: #fff;
+}
+
+/* ── Summary ─────────────────────────────────────────────── */
+.summary {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.summaryRow span:first-child {
+  color: #666;
+}
+
+.summaryHighlight {
+  color: #00c853;
+  font-weight: 700;
+}
+
+/* ── Footer CTA ──────────────────────────────────────────── */
+.footer {
+  padding: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.cta {
+  width: 100%;
+  padding: 16px;
+  border-radius: 16px;
+  border: none;
+  background: #0052ff;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  font-family: inherit;
+}
+
+.ctaDisabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.ctaLoading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ── Public toggle ──────────────────────────────────────── */
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.toggleLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: #f0f0f5;
+  margin: 0 0 2px;
+}
+
+.toggleDesc {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+}
+
+.toggle {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.toggle::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+}
+
+.toggleOn {
+  background: #0052ff;
+}
+
+.toggleOn::after {
+  transform: translateX(20px);
+}
+
+/* ── Min players ────────────────────────────────────────── */
+.minPlayersRow {
+  margin-bottom: 16px;
+}
+
+.minPlayersLabel {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.minPlayersBtns {
+  display: flex;
+  gap: 8px;
+}
+
+.minBtn {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #ccc;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.minBtnActive {
+  border-color: #0052ff;
+  background: rgba(0, 82, 255, 0.15);
+  color: #fff;
+}

@@ -1,0 +1,209 @@
+/* ── Layout ──────────────────────────────────────────────── */
+.container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #0a0a0f;
+  color: #f0f0f5;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.back {
+  background: rgba(255, 255, 255, 0.07);
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.title {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+/* ── Body ────────────────────────────────────────────────── */
+.body {
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hint {
+  font-size: 14px;
+  color: #666;
+}
+
+/* ── Code input row ──────────────────────────────────────── */
+.inputRow {
+  display: flex;
+  gap: 10px;
+}
+
+.codeInput {
+  flex: 1;
+  background: #13131a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #fff;
+  text-transform: uppercase;
+  font-family: monospace;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.codeInput:focus {
+  border-color: #0052ff;
+}
+
+.codeInput::placeholder {
+  color: #333;
+  letter-spacing: 2px;
+  font-weight: 400;
+}
+
+.searchBtn {
+  padding: 0 20px;
+  border-radius: 12px;
+  border: none;
+  background: #0052ff;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  opacity: 1;
+  transition: opacity 0.15s ease;
+}
+
+.searchBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.searchBtnLoading {
+  opacity: 0.7;
+}
+
+/* ── Error ───────────────────────────────────────────────── */
+.errorMsg {
+  font-size: 14px;
+  color: #ff4d4d;
+  padding: 12px 16px;
+  background: rgba(255, 77, 77, 0.08);
+  border: 1px solid rgba(255, 77, 77, 0.2);
+  border-radius: 10px;
+}
+
+/* ── Already member ──────────────────────────────────────── */
+.alreadyCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: rgba(0, 200, 83, 0.07);
+  border: 1px solid rgba(0, 200, 83, 0.2);
+  border-radius: 14px;
+  font-size: 14px;
+  color: #ccc;
+}
+
+.goBtn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background: #00c853;
+  color: #000;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ── League card ─────────────────────────────────────────── */
+.leagueCard {
+  background: #13131a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.leagueTop {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.sportEmoji {
+  font-size: 32px;
+}
+
+.leagueName {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.leagueMeta {
+  font-size: 12px;
+  color: #666;
+  margin-top: 3px;
+}
+
+.feeRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.feeLabel {
+  font-size: 14px;
+  color: #666;
+}
+
+.feeValue {
+  font-size: 18px;
+  font-weight: 700;
+  color: #00c853;
+}
+
+/* ── Transaction wrapper ─────────────────────────────────── */
+.txWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.txBtn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  border: none;
+  background: #0052ff;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}

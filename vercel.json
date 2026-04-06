@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/sync-matches",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/update-results",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/notify-upcoming",
+      "schedule": "*/30 * * * *"
+    }
+  ]
+}

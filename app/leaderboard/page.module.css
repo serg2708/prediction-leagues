@@ -1,0 +1,160 @@
+.container {
+  min-height: 100vh;
+  background: #0a0a0f;
+  color: #f0f0f5;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.back {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.title { font-size: 17px; font-weight: 700; }
+
+.loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255,255,255,0.08);
+  border-top-color: #0052ff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Top 3 podium ── */
+.podium {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 28px 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.podiumItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.podiumAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #1e1e2a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  border: 2px solid transparent;
+}
+
+.podiumFirst  .podiumAvatar { width: 60px; height: 60px; border-color: #ffd700; font-size: 24px; }
+.podiumSecond .podiumAvatar { border-color: #c0c0c0; }
+.podiumThird  .podiumAvatar { border-color: #cd7f32; }
+
+.podiumMedal { font-size: 20px; }
+.podiumFirst .podiumMedal { font-size: 28px; }
+
+.podiumName {
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.podiumPts {
+  font-size: 11px;
+  color: #666;
+}
+
+.podiumFirst .podiumPts { color: #ffd700; font-weight: 600; }
+
+/* ── List ── */
+.list { display: flex; flex-direction: column; }
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.rowRank {
+  width: 28px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #555;
+  flex-shrink: 0;
+}
+
+.rowAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #1e1e2a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.rowAvatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.rowName { flex: 1; font-size: 14px; font-weight: 500; }
+
+.rowMeta {
+  font-size: 11px;
+  color: #555;
+  margin-top: 2px;
+}
+
+.rowPoints {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffd700;
+  white-space: nowrap;
+}
+
+.rowLeagues {
+  font-size: 11px;
+  color: #555;
+  text-align: right;
+}
+
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #555;
+  font-size: 14px;
+}

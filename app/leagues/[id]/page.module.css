@@ -1,0 +1,405 @@
+/* ── History tab ─────────────────────────────────────────── */
+.historyRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.historyIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.historyCorrect { background: rgba(0,200,83,0.15);  color: #00c853; }
+.historyWrong   { background: rgba(255,77,77,0.15);  color: #ff4d4d; }
+.historyNoPred  { background: rgba(255,255,255,0.05); color: #555; }
+
+.historyInfo { flex: 1; min-width: 0; }
+
+.historyMatch {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.historyMeta {
+  font-size: 11px;
+  color: #666;
+  margin-top: 3px;
+}
+
+.historyPts     { font-size: 13px; font-weight: 600; color: #00c853; white-space: nowrap; }
+.historyPtsZero { font-size: 13px; color: #444; white-space: nowrap; }
+
+.shareBtn {
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0,82,255,0.4);
+  background: rgba(0,82,255,0.12);
+  color: #4d8aff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.shareBtn:hover { background: rgba(0,82,255,0.2); }
+
+/* ── Layout ──────────────────────────────────────────────── */
+.container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #0a0a0f;
+  color: #f0f0f5;
+  padding-bottom: 32px;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: #0a0a0f;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(255, 255, 255, 0.08);
+  border-top-color: #0052ff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.notFound {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 16px;
+  color: #888;
+  background: #0a0a0f;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.back {
+  background: rgba(255, 255, 255, 0.07);
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.headerInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.leagueName {
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leagueSub {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.inviteCode {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.codeLabel {
+  font-size: 10px;
+  color: #555;
+}
+
+.code {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: monospace;
+  color: #0052ff;
+  letter-spacing: 1px;
+}
+
+/* ── My Stats Bar ────────────────────────────────────────── */
+.myStats {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  background: rgba(0, 82, 255, 0.06);
+  border-bottom: 1px solid rgba(0, 82, 255, 0.15);
+}
+
+.myStat {
+  flex: 1;
+  text-align: center;
+}
+
+.myStatValue {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.myStatLabel {
+  font-size: 11px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.myStatDivider {
+  width: 1px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Tabs ────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  padding: 12px 16px 0;
+  gap: 8px;
+}
+
+.tab {
+  padding: 7px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: #888;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.tabActive {
+  background: #0052ff;
+  border-color: #0052ff;
+  color: #fff;
+}
+
+/* ── Content ─────────────────────────────────────────────── */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 16px;
+}
+
+.empty {
+  text-align: center;
+  padding: 48px 0;
+  color: #555;
+  font-size: 14px;
+}
+
+/* ── Match Card ──────────────────────────────────────────── */
+.matchCard {
+  background: #13131a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.matchHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.matchTime {
+  font-size: 12px;
+  color: #888;
+}
+
+.matchTimeLive {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ff4d4d;
+}
+
+.matchTimeFinished {
+  font-size: 12px;
+  color: #555;
+}
+
+.liveDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ff4d4d;
+  flex-shrink: 0;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.score {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.teams {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.team {
+  font-size: 15px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.team:last-child {
+  text-align: right;
+}
+
+.vs {
+  font-size: 11px;
+  color: #444;
+  flex-shrink: 0;
+}
+
+/* ── Prediction buttons ──────────────────────────────────── */
+.outcomes {
+  display: flex;
+  gap: 8px;
+}
+
+.outcomeBtn {
+  flex: 1;
+  padding: 8px 4px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #aaa;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.outcomeBtn:disabled {
+  cursor: default;
+  opacity: 0.8;
+}
+
+.outcomeBtnSelected {
+  background: rgba(0, 82, 255, 0.2);
+  border-color: #0052ff;
+  color: #fff;
+}
+
+.outcomeBtnCorrect {
+  background: rgba(0, 200, 83, 0.2);
+  border-color: #00c853;
+  color: #00c853;
+}
+
+.outcomeBtnWrong {
+  background: rgba(255, 77, 77, 0.15);
+  border-color: rgba(255, 77, 77, 0.4);
+  color: #ff4d4d;
+  text-decoration: line-through;
+}
+
+/* ── Standings ───────────────────────────────────────────── */
+.standings {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.memberRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #13131a;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.memberRank {
+  font-size: 18px;
+  width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.memberName {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.memberPoints {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0052ff;
+}
+
+/* ── Waiting for players banner ─────────────────────────── */
+.waitingBanner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 16px;
+  padding: 12px 14px;
+  background: rgba(255, 170, 0, 0.1);
+  border: 1px solid rgba(255, 170, 0, 0.25);
+  border-radius: 10px;
+  font-size: 13px;
+  color: #ffaa00;
+  line-height: 1.4;
+}

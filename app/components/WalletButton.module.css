@@ -1,0 +1,129 @@
+/* ── Connected button ── */
+.connectedBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #f0f0f5;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #00c853;
+  flex-shrink: 0;
+}
+
+/* ── Connect button ── */
+.connectBtn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: none;
+  background: #0052ff;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ── Dropdown (disconnect/copy) ── */
+.dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #1a1a25;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+  min-width: 160px;
+  z-index: 100;
+}
+
+.dropItem {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dropItem:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dropItemRed {
+  color: #ff4d4d;
+}
+
+/* ── Wallet picker modal ── */
+.modal {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #13131a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 16px;
+  min-width: 240px;
+  z-index: 200;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.modalTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #888;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.walletRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+  color: #f0f0f5;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.walletRow:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.walletIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: contain;
+}
+
+.walletName {
+  flex: 1;
+}

@@ -1,0 +1,356 @@
+/* ── Layout ──────────────────────────────────────────────── */
+.container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #0a0a0f;
+  color: #f0f0f5;
+  padding-bottom: 90px; /* room for FAB */
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo {
+  font-size: 22px;
+}
+
+.appName {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+/* ── Stats row ───────────────────────────────────────────── */
+.statsRow {
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.stat {
+  flex: 1;
+  text-align: center;
+}
+
+.statValue {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.statLabel {
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.liveValue {
+  color: #ff4d4d;
+}
+
+.statDivider {
+  width: 1px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ── Tabs ────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  padding: 12px 16px 0;
+  gap: 8px;
+}
+
+.tab {
+  padding: 7px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: #888;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tabActive {
+  background: #0052ff;
+  border-color: #0052ff;
+  color: #fff;
+}
+
+/* ── Feed ────────────────────────────────────────────────── */
+.feed {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 16px;
+}
+
+/* ── League Card ─────────────────────────────────────────── */
+.card {
+  background: #13131a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cardLeft {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sportEmoji {
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.leagueName {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pool {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.poolAmount {
+  font-size: 18px;
+  font-weight: 700;
+  color: #00c853;
+}
+
+.poolLabel {
+  font-size: 10px;
+  color: #666;
+  margin-top: 1px;
+}
+
+/* ── Match badges ────────────────────────────────────────── */
+.badgeLive,
+.badgeUpcoming,
+.badgeFinished {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badgeLive {
+  background: rgba(255, 77, 77, 0.15);
+  color: #ff4d4d;
+  border: 1px solid rgba(255, 77, 77, 0.3);
+}
+
+.liveDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff4d4d;
+  flex-shrink: 0;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.badgeUpcoming {
+  background: rgba(255, 255, 255, 0.05);
+  color: #aaa;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.badgeFinished {
+  background: rgba(255, 255, 255, 0.03);
+  color: #555;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ── Card bottom row ─────────────────────────────────────── */
+.cardBottom {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 10px;
+}
+
+.rankBlock {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.rank {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ccc;
+}
+
+.rankFirst {
+  color: #ffd700;
+}
+
+.rankSub {
+  font-size: 11px;
+  color: #555;
+}
+
+.pointsBlock {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  margin-right: auto;
+}
+
+.pointsValue {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0052ff;
+}
+
+.pointsLabel {
+  font-size: 11px;
+  color: #555;
+}
+
+.viewBtn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #ccc;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.viewBtn:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+/* ── Skeleton card ───────────────────────────────────────── */
+.skeleton {
+  height: 112px;
+  border-radius: 16px;
+  background: linear-gradient(90deg, #13131a 25%, #1e1e2a 50%, #13131a 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Empty state ─────────────────────────────────────────── */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 60px 20px;
+  color: #555;
+  font-size: 14px;
+}
+
+.empty p:first-child {
+  font-size: 36px;
+}
+
+.emptyHint {
+  font-size: 12px;
+  color: #444;
+}
+
+/* ── FAB row ─────────────────────────────────────────────── */
+.fabRow {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.fab {
+  padding: 14px 28px;
+  border-radius: 28px;
+  border: none;
+  background: #0052ff;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 24px rgba(0, 82, 255, 0.45);
+  white-space: nowrap;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fab:active {
+  transform: scale(0.97);
+  box-shadow: 0 2px 12px rgba(0, 82, 255, 0.35);
+}
+
+.fabSecondary {
+  padding: 14px 20px;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: #ccc;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.fabSecondary:active {
+  background: rgba(255, 255, 255, 0.1);
+}
