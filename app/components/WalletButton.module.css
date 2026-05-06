@@ -5,9 +5,9 @@
   gap: 6px;
   padding: 8px 14px;
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.05);
-  color: #f0f0f5;
+  border: 1px solid rgba(80, 120, 255, 0.2);
+  background: rgba(80, 120, 255, 0.07);
+  color: #eef0ff;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -18,7 +18,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #00c853;
+  background: #00b4ff;
   flex-shrink: 0;
 }
 
@@ -27,7 +27,7 @@
   padding: 8px 16px;
   border-radius: 20px;
   border: none;
-  background: #0052ff;
+  background: linear-gradient(135deg, #0055ff 0%, #00b4ff 100%);
   color: #fff;
   font-size: 13px;
   font-weight: 600;
@@ -40,8 +40,8 @@
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  background: #1a1a25;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0d0d20;
+  border: 1px solid rgba(80, 120, 255, 0.18);
   border-radius: 10px;
   overflow: hidden;
   min-width: 160px;
@@ -54,14 +54,14 @@
   padding: 10px 14px;
   background: none;
   border: none;
-  color: #ccc;
+  color: #9098c0;
   font-size: 13px;
   text-align: left;
   cursor: pointer;
 }
 
 .dropItem:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(80, 120, 255, 0.08);
 }
 
 .dropItemRed {
@@ -73,19 +73,19 @@
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  background: #13131a;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0d0d20;
+  border: 1px solid rgba(80, 120, 255, 0.18);
   border-radius: 16px;
   padding: 16px;
   min-width: 240px;
   z-index: 200;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 40px rgba(0, 20, 80, 0.6);
 }
 
 .modalTitle {
   font-size: 13px;
   font-weight: 600;
-  color: #888;
+  color: #5a6080;
   margin-bottom: 10px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -103,9 +103,9 @@
   gap: 10px;
   padding: 10px 12px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(255, 255, 255, 0.03);
-  color: #f0f0f5;
+  border: 1px solid rgba(80, 120, 255, 0.1);
+  background: rgba(80, 120, 255, 0.04);
+  color: #eef0ff;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -114,7 +114,7 @@
 }
 
 .walletRow:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(80, 120, 255, 0.1);
 }
 
 .walletIcon {

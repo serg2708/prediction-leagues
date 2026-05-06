@@ -1,7 +1,7 @@
 .container {
   min-height: 100vh;
-  background: #0a0a0f;
-  color: #f0f0f5;
+  background: #07071a;
+  color: #eef0ff;
   display: flex;
   flex-direction: column;
 }
@@ -11,13 +11,13 @@
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid rgba(80, 120, 255, 0.12);
 }
 
 .back {
   background: none;
   border: none;
-  color: #888;
+  color: #5a6080;
   font-size: 20px;
   cursor: pointer;
   padding: 4px 8px;
@@ -35,8 +35,8 @@
 .spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid rgba(255,255,255,0.08);
-  border-top-color: #0052ff;
+  border: 3px solid rgba(80, 120, 255, 0.12);
+  border-top-color: #00b4ff;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -50,7 +50,7 @@
   align-items: flex-end;
   gap: 12px;
   padding: 28px 16px 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(80, 120, 255, 0.08);
 }
 
 .podiumItem {
@@ -64,7 +64,7 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: #1e1e2a;
+  background: #13132a;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -91,7 +91,7 @@
 
 .podiumPts {
   font-size: 11px;
-  color: #666;
+  color: #3a3c55;
 }
 
 .podiumFirst .podiumPts { color: #ffd700; font-weight: 600; }
@@ -104,7 +104,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(80, 120, 255, 0.07);
 }
 
 .rowRank {
@@ -112,7 +112,7 @@
   text-align: center;
   font-size: 14px;
   font-weight: 700;
-  color: #555;
+  color: #3a3c55;
   flex-shrink: 0;
 }
 
@@ -120,7 +120,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #1e1e2a;
+  background: #13132a;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -135,7 +135,7 @@
 
 .rowMeta {
   font-size: 11px;
-  color: #555;
+  color: #3a3c55;
   margin-top: 2px;
 }
 
@@ -148,13 +148,13 @@
 
 .rowLeagues {
   font-size: 11px;
-  color: #555;
+  color: #3a3c55;
   text-align: right;
 }
 
 .empty {
   text-align: center;
   padding: 60px 20px;
-  color: #555;
+  color: #3a3c55;
   font-size: 14px;
 }

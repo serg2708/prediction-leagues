@@ -1,13 +1,14 @@
 "use client";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import { WalletButton } from "./components/WalletButton";
-import { useRouter } from "next/navigation";
-import { useLeagues } from "@/lib/hooks/useLeagues";
 import { useDiscoverLeagues } from "@/lib/hooks/useDiscoverLeagues";
+import { useLeagues } from "@/lib/hooks/useLeagues";
+import type { LeagueWithStats } from "@/lib/hooks/useLeagues";
 import { useProfile } from "@/lib/hooks/useProfile";
 import type { League, Match } from "@/lib/types";
-import type { LeagueWithStats } from "@/lib/hooks/useLeagues";
+import { WalletButton } from "./components/WalletButton";
 import styles from "./page.module.css";
 
 const SPORT_EMOJI: Record<string, string> = { football: "⚽", cs2: "🎮", nba: "🏀" };
@@ -125,7 +126,7 @@ export default function Home() {
     <div className={styles.container}>
       <header className={styles.header}>
         <div className={styles.headerTitle}>
-          <span className={styles.logo}>⚡</span>
+          <Image src="/logo.png" alt="logo" width={36} height={36} className={styles.logo} />
           <h1 className={styles.appName}>Prediction Leagues</h1>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>

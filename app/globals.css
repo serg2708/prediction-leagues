@@ -1,14 +1,7 @@
 @layer base {
   :root {
-    --background: #ffffff;
-    --foreground: #171717;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --background: #0a0a0a;
-      --foreground: #ededed;
-    }
+    --background: #07071a;
+    --foreground: #eef0ff;
   }
 
   html,
@@ -26,19 +19,12 @@
   }
 
   code {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: rgba(80, 120, 255, 0.08);
     border-radius: 6px;
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(80, 120, 255, 0.15);
     font-family: var(--font-source-code-pro), monospace;
     font-size: 0.875rem;
     padding: 0.25rem 0.5rem calc(0.25rem + 2px);
-  }
-
-  @media (prefers-color-scheme: dark) {
-    code {
-      background-color: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
   }
 
   * {
@@ -52,9 +38,7 @@
     text-decoration: none;
   }
 
-  @media (prefers-color-scheme: dark) {
-    html {
-      color-scheme: dark;
-    }
+  html {
+    color-scheme: dark;
   }
 }

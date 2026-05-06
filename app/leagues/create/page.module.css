@@ -3,8 +3,8 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: #0a0a0f;
-  color: #f0f0f5;
+  background: #07071a;
+  color: #eef0ff;
 }
 
 /* ── Header ──────────────────────────────────────────────── */
@@ -13,13 +13,13 @@
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid rgba(80, 120, 255, 0.12);
 }
 
 .back {
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(80, 120, 255, 0.08);
   border: none;
-  color: #fff;
+  color: #eef0ff;
   font-size: 18px;
   width: 36px;
   height: 36px;
@@ -55,9 +55,9 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(80, 120, 255, 0.2);
   background: transparent;
-  color: #555;
+  color: #3a3c55;
   font-size: 12px;
   font-weight: 700;
   display: flex;
@@ -68,37 +68,37 @@
 }
 
 .progressActive {
-  border-color: #0052ff;
-  background: #0052ff;
+  border-color: #0055ff;
+  background: linear-gradient(135deg, #0055ff 0%, #00b4ff 100%);
   color: #fff;
 }
 
 .progressDone {
-  border-color: #00c853;
-  background: #00c853;
+  border-color: #00b4ff;
+  background: #00b4ff;
   color: #fff;
 }
 
 .progressLabel {
   font-size: 12px;
-  color: #555;
+  color: #3a3c55;
   white-space: nowrap;
 }
 
 .progressLabelActive {
-  color: #ccc;
+  color: #9098c0;
   font-weight: 600;
 }
 
 .progressLine {
   width: 32px;
   height: 2px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(80, 120, 255, 0.15);
   margin: 0 4px;
 }
 
 .progressLineDone {
-  background: #00c853;
+  background: linear-gradient(90deg, #0055ff, #00b4ff);
 }
 
 /* ── Body ────────────────────────────────────────────────── */
@@ -121,35 +121,35 @@
 
 .stepDesc {
   font-size: 14px;
-  color: #666;
+  color: #3a3c55;
   margin-top: -10px;
 }
 
 /* ── Name input ──────────────────────────────────────────── */
 .input {
   width: 100%;
-  background: #13131a;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #0d0d20;
+  border: 1px solid rgba(80, 120, 255, 0.18);
   border-radius: 12px;
   padding: 14px 16px;
   font-size: 16px;
-  color: #fff;
+  color: #eef0ff;
   outline: none;
   font-family: inherit;
   transition: border-color 0.15s ease;
 }
 
 .input:focus {
-  border-color: #0052ff;
+  border-color: #0055ff;
 }
 
 .input::placeholder {
-  color: #444;
+  color: #2a2c40;
 }
 
 .charCount {
   font-size: 12px;
-  color: #444;
+  color: #2a2c40;
   align-self: flex-end;
   margin-top: -10px;
 }
@@ -166,8 +166,8 @@
   align-items: center;
   gap: 14px;
   padding: 16px;
-  background: #13131a;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0d0d20;
+  border: 1px solid rgba(80, 120, 255, 0.12);
   border-radius: 14px;
   cursor: pointer;
   text-align: left;
@@ -175,8 +175,8 @@
 }
 
 .sportCardActive {
-  border-color: #0052ff;
-  background: rgba(0, 82, 255, 0.1);
+  border-color: #0055ff;
+  background: rgba(0, 85, 255, 0.1);
 }
 
 .sportEmoji {
@@ -187,13 +187,13 @@
 .sportLabel {
   font-size: 15px;
   font-weight: 600;
-  color: #fff;
+  color: #eef0ff;
   display: block;
 }
 
 .sportDesc {
   font-size: 12px;
-  color: #666;
+  color: #3a3c55;
   display: block;
   margin-top: 2px;
 }
@@ -209,10 +209,10 @@
   flex: 1;
   min-width: 60px;
   padding: 14px 8px;
-  background: #13131a;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0d0d20;
+  border: 1px solid rgba(80, 120, 255, 0.12);
   border-radius: 12px;
-  color: #aaa;
+  color: #5a6080;
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
@@ -220,15 +220,15 @@
 }
 
 .feeBtnActive {
-  background: rgba(0, 82, 255, 0.15);
-  border-color: #0052ff;
-  color: #fff;
+  background: rgba(0, 85, 255, 0.15);
+  border-color: #0055ff;
+  color: #eef0ff;
 }
 
 /* ── Summary ─────────────────────────────────────────────── */
 .summary {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(80, 120, 255, 0.04);
+  border: 1px solid rgba(80, 120, 255, 0.12);
   border-radius: 14px;
   padding: 16px;
   display: flex;
@@ -243,18 +243,18 @@
 }
 
 .summaryRow span:first-child {
-  color: #666;
+  color: #3a3c55;
 }
 
 .summaryHighlight {
-  color: #00c853;
+  color: #00b4ff;
   font-weight: 700;
 }
 
 /* ── Footer CTA ──────────────────────────────────────────── */
 .footer {
   padding: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-top: 1px solid rgba(80, 120, 255, 0.1);
 }
 
 .cta {
@@ -262,7 +262,7 @@
   padding: 16px;
   border-radius: 16px;
   border: none;
-  background: #0052ff;
+  background: linear-gradient(135deg, #0055ff 0%, #00b4ff 100%);
   color: #fff;
   font-size: 16px;
   font-weight: 700;
@@ -288,21 +288,21 @@
   justify-content: space-between;
   margin-top: 20px;
   padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(80, 120, 255, 0.05);
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(80, 120, 255, 0.1);
 }
 
 .toggleLabel {
   font-size: 14px;
   font-weight: 500;
-  color: #f0f0f5;
+  color: #eef0ff;
   margin: 0 0 2px;
 }
 
 .toggleDesc {
   font-size: 12px;
-  color: #666;
+  color: #3a3c55;
   margin: 0;
 }
 
@@ -311,7 +311,7 @@
   height: 24px;
   border-radius: 12px;
   border: none;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(80, 120, 255, 0.2);
   position: relative;
   cursor: pointer;
   flex-shrink: 0;
@@ -331,7 +331,7 @@
 }
 
 .toggleOn {
-  background: #0052ff;
+  background: linear-gradient(135deg, #0055ff 0%, #00b4ff 100%);
 }
 
 .toggleOn::after {
@@ -345,7 +345,7 @@
 
 .minPlayersLabel {
   font-size: 13px;
-  color: #888;
+  color: #5a6080;
   margin-bottom: 8px;
 }
 
@@ -358,15 +358,15 @@
   flex: 1;
   padding: 8px 0;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
-  color: #ccc;
+  border: 1px solid rgba(80, 120, 255, 0.15);
+  background: rgba(80, 120, 255, 0.05);
+  color: #9098c0;
   font-size: 14px;
   cursor: pointer;
 }
 
 .minBtnActive {
-  border-color: #0052ff;
-  background: rgba(0, 82, 255, 0.15);
-  color: #fff;
+  border-color: #0055ff;
+  background: rgba(0, 85, 255, 0.15);
+  color: #eef0ff;
 }

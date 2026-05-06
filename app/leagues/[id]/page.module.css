@@ -4,7 +4,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(80, 120, 255, 0.07);
 }
 
 .historyIcon {
@@ -19,9 +19,9 @@
   flex-shrink: 0;
 }
 
-.historyCorrect { background: rgba(0,200,83,0.15);  color: #00c853; }
-.historyWrong   { background: rgba(255,77,77,0.15);  color: #ff4d4d; }
-.historyNoPred  { background: rgba(255,255,255,0.05); color: #555; }
+.historyCorrect { background: rgba(0, 200, 83, 0.15);  color: #00c853; }
+.historyWrong   { background: rgba(255, 77, 77, 0.15);  color: #ff4d4d; }
+.historyNoPred  { background: rgba(80, 120, 255, 0.07); color: #3a3c55; }
 
 .historyInfo { flex: 1; min-width: 0; }
 
@@ -35,34 +35,34 @@
 
 .historyMeta {
   font-size: 11px;
-  color: #666;
+  color: #3a3c55;
   margin-top: 3px;
 }
 
 .historyPts     { font-size: 13px; font-weight: 600; color: #00c853; white-space: nowrap; }
-.historyPtsZero { font-size: 13px; color: #444; white-space: nowrap; }
+.historyPtsZero { font-size: 13px; color: #2a2c40; white-space: nowrap; }
 
 .shareBtn {
   padding: 5px 12px;
   border-radius: 8px;
-  border: 1px solid rgba(0,82,255,0.4);
-  background: rgba(0,82,255,0.12);
-  color: #4d8aff;
+  border: 1px solid rgba(0, 100, 255, 0.35);
+  background: rgba(0, 80, 255, 0.1);
+  color: #5599ff;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s;
 }
-.shareBtn:hover { background: rgba(0,82,255,0.2); }
+.shareBtn:hover { background: rgba(0, 80, 255, 0.18); }
 
 /* ── Layout ──────────────────────────────────────────────── */
 .container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: #0a0a0f;
-  color: #f0f0f5;
+  background: #07071a;
+  color: #eef0ff;
   padding-bottom: 32px;
 }
 
@@ -71,14 +71,14 @@
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background: #0a0a0f;
+  background: #07071a;
 }
 
 .spinner {
   width: 36px;
   height: 36px;
-  border: 3px solid rgba(255, 255, 255, 0.08);
-  border-top-color: #0052ff;
+  border: 3px solid rgba(80, 120, 255, 0.12);
+  border-top-color: #00b4ff;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -94,8 +94,8 @@
   justify-content: center;
   height: 100vh;
   gap: 16px;
-  color: #888;
-  background: #0a0a0f;
+  color: #5a6080;
+  background: #07071a;
 }
 
 /* ── Header ──────────────────────────────────────────────── */
@@ -104,13 +104,13 @@
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid rgba(80, 120, 255, 0.12);
 }
 
 .back {
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(80, 120, 255, 0.08);
   border: none;
-  color: #fff;
+  color: #eef0ff;
   font-size: 18px;
   width: 36px;
   height: 36px;
@@ -137,7 +137,7 @@
 
 .leagueSub {
   font-size: 12px;
-  color: #666;
+  color: #3a3c55;
   margin-top: 2px;
 }
 
@@ -150,14 +150,14 @@
 
 .codeLabel {
   font-size: 10px;
-  color: #555;
+  color: #3a3c55;
 }
 
 .code {
   font-size: 13px;
   font-weight: 700;
   font-family: monospace;
-  color: #0052ff;
+  color: #00b4ff;
   letter-spacing: 1px;
 }
 
@@ -166,8 +166,8 @@
   display: flex;
   align-items: center;
   padding: 12px 20px;
-  background: rgba(0, 82, 255, 0.06);
-  border-bottom: 1px solid rgba(0, 82, 255, 0.15);
+  background: rgba(0, 60, 200, 0.08);
+  border-bottom: 1px solid rgba(0, 100, 255, 0.15);
 }
 
 .myStat {
@@ -182,14 +182,14 @@
 
 .myStatLabel {
   font-size: 11px;
-  color: #666;
+  color: #3a3c55;
   margin-top: 2px;
 }
 
 .myStatDivider {
   width: 1px;
   height: 28px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(80, 120, 255, 0.15);
 }
 
 /* ── Tabs ────────────────────────────────────────────────── */
@@ -202,17 +202,18 @@
 .tab {
   padding: 7px 18px;
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(80, 120, 255, 0.2);
   background: transparent;
-  color: #888;
+  color: #5a6080;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .tabActive {
-  background: #0052ff;
-  border-color: #0052ff;
+  background: linear-gradient(135deg, #0055ff 0%, #00b4ff 100%);
+  border-color: transparent;
   color: #fff;
 }
 
@@ -227,14 +228,14 @@
 .empty {
   text-align: center;
   padding: 48px 0;
-  color: #555;
+  color: #3a3c55;
   font-size: 14px;
 }
 
 /* ── Match Card ──────────────────────────────────────────── */
 .matchCard {
-  background: #13131a;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0d0d20;
+  border: 1px solid rgba(80, 120, 255, 0.12);
   border-radius: 14px;
   padding: 14px;
   display: flex;
@@ -250,7 +251,7 @@
 
 .matchTime {
   font-size: 12px;
-  color: #888;
+  color: #5a6080;
 }
 
 .matchTimeLive {
@@ -264,7 +265,7 @@
 
 .matchTimeFinished {
   font-size: 12px;
-  color: #555;
+  color: #3a3c55;
 }
 
 .liveDot {
@@ -284,7 +285,7 @@
 .score {
   font-size: 14px;
   font-weight: 700;
-  color: #fff;
+  color: #eef0ff;
 }
 
 .teams {
@@ -306,7 +307,7 @@
 
 .vs {
   font-size: 11px;
-  color: #444;
+  color: #2a2c40;
   flex-shrink: 0;
 }
 
@@ -320,9 +321,9 @@
   flex: 1;
   padding: 8px 4px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
-  color: #aaa;
+  border: 1px solid rgba(80, 120, 255, 0.15);
+  background: rgba(80, 120, 255, 0.05);
+  color: #5a6080;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -335,9 +336,9 @@
 }
 
 .outcomeBtnSelected {
-  background: rgba(0, 82, 255, 0.2);
-  border-color: #0052ff;
-  color: #fff;
+  background: rgba(0, 85, 255, 0.2);
+  border-color: #0055ff;
+  color: #eef0ff;
 }
 
 .outcomeBtnCorrect {
@@ -347,8 +348,8 @@
 }
 
 .outcomeBtnWrong {
-  background: rgba(255, 77, 77, 0.15);
-  border-color: rgba(255, 77, 77, 0.4);
+  background: rgba(255, 77, 77, 0.12);
+  border-color: rgba(255, 77, 77, 0.35);
   color: #ff4d4d;
   text-decoration: line-through;
 }
@@ -365,9 +366,9 @@
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  background: #13131a;
+  background: #0d0d20;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(80, 120, 255, 0.1);
 }
 
 .memberRank {
@@ -386,7 +387,7 @@
 .memberPoints {
   font-size: 14px;
   font-weight: 700;
-  color: #0052ff;
+  color: #00b4ff;
 }
 
 /* ── Waiting for players banner ─────────────────────────── */
@@ -396,8 +397,8 @@
   gap: 8px;
   margin: 12px 16px;
   padding: 12px 14px;
-  background: rgba(255, 170, 0, 0.1);
-  border: 1px solid rgba(255, 170, 0, 0.25);
+  background: rgba(255, 170, 0, 0.08);
+  border: 1px solid rgba(255, 170, 0, 0.22);
   border-radius: 10px;
   font-size: 13px;
   color: #ffaa00;
