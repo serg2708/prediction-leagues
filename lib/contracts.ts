@@ -76,6 +76,13 @@ export const PREDICTION_POOL_ABI = [
     outputs: [{ type: "uint256" }],
     stateMutability: "view",
   },
+  { name: "NotOwner",      type: "error" as const, inputs: [] },
+  { name: "LeagueNotFound", type: "error" as const, inputs: [] },
+  { name: "AlreadyDeposited", type: "error" as const, inputs: [] },
+  { name: "WrongAmount",   type: "error" as const, inputs: [] },
+  { name: "AlreadyPaid",   type: "error" as const, inputs: [] },
+  { name: "TransferFailed", type: "error" as const, inputs: [] },
+  { name: "NotDepositor",  type: "error" as const, inputs: [] },
 ] as const;
 
 // ── Helpers ────────────────────────────────────────────────────────────────

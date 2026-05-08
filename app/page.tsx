@@ -8,6 +8,7 @@ import { useLeagues } from "@/lib/hooks/useLeagues";
 import type { LeagueWithStats } from "@/lib/hooks/useLeagues";
 import { useProfile } from "@/lib/hooks/useProfile";
 import type { League, Match } from "@/lib/types";
+import { ThemeToggle } from "./components/ThemeToggle";
 import { WalletButton } from "./components/WalletButton";
 import styles from "./page.module.css";
 
@@ -130,6 +131,7 @@ export default function Home() {
           <h1 className={styles.appName}>Prediction Leagues</h1>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <ThemeToggle />
           <button type="button" className={styles.viewBtn} onClick={() => router.push("/leaderboard")} title="Leaderboard">🏆</button>
           <button type="button" className={styles.viewBtn} onClick={() => router.push("/profile")} title="Profile">👤</button>
           <WalletButton />

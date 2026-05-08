@@ -3,8 +3,8 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: #07071a;
-  color: #eef0ff;
+  background: var(--bg);
+  color: var(--fg);
   padding-bottom: 90px;
 }
 
@@ -14,7 +14,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 16px 10px;
-  border-bottom: 1px solid rgba(80, 120, 255, 0.12);
+  border-bottom: 1px solid var(--border);
 }
 
 .headerTitle {
@@ -34,7 +34,7 @@
   font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.3px;
-  background: linear-gradient(135deg, #fff 0%, #00b4ff 100%);
+  background: var(--grad-name);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -45,8 +45,8 @@
   display: flex;
   align-items: center;
   padding: 14px 20px;
-  background: rgba(0, 60, 200, 0.06);
-  border-bottom: 1px solid rgba(80, 120, 255, 0.08);
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
 }
 
 .stat {
@@ -62,18 +62,18 @@
 
 .statLabel {
   font-size: 11px;
-  color: #5a6080;
+  color: var(--fg-muted);
   margin-top: 2px;
 }
 
 .liveValue {
-  color: #ff4d4d;
+  color: var(--live);
 }
 
 .statDivider {
   width: 1px;
   height: 32px;
-  background: rgba(80, 120, 255, 0.15);
+  background: var(--border-m);
 }
 
 /* ── Tabs ────────────────────────────────────────────────── */
@@ -86,9 +86,9 @@
 .tab {
   padding: 7px 18px;
   border-radius: 20px;
-  border: 1px solid rgba(80, 120, 255, 0.2);
+  border: 1px solid var(--border-m);
   background: transparent;
-  color: #5a6080;
+  color: var(--fg-muted);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -96,7 +96,7 @@
 }
 
 .tabActive {
-  background: linear-gradient(135deg, #0055ff 0%, #00b4ff 100%);
+  background: var(--grad);
   border-color: transparent;
   color: #fff;
 }
@@ -111,13 +111,14 @@
 
 /* ── League Card ─────────────────────────────────────────── */
 .card {
-  background: #0d0d20;
-  border: 1px solid rgba(80, 120, 255, 0.12);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  box-shadow: var(--shadow-card);
 }
 
 .cardTop {
@@ -158,12 +159,12 @@
 .poolAmount {
   font-size: 18px;
   font-weight: 700;
-  color: #00b4ff;
+  color: var(--accent);
 }
 
 .poolLabel {
   font-size: 10px;
-  color: #3a3c55;
+  color: var(--fg-dim);
   margin-top: 1px;
 }
 
@@ -185,16 +186,16 @@
 }
 
 .badgeLive {
-  background: rgba(255, 77, 77, 0.15);
-  color: #ff4d4d;
-  border: 1px solid rgba(255, 77, 77, 0.3);
+  background: var(--live-bg);
+  color: var(--live);
+  border: 1px solid var(--live-border);
 }
 
 .liveDot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #ff4d4d;
+  background: var(--live);
   flex-shrink: 0;
   animation: pulse 1.2s ease-in-out infinite;
 }
@@ -205,15 +206,15 @@
 }
 
 .badgeUpcoming {
-  background: rgba(80, 120, 255, 0.07);
-  color: #5a6080;
-  border: 1px solid rgba(80, 120, 255, 0.15);
+  background: var(--accent-bg);
+  color: var(--fg-muted);
+  border: 1px solid var(--border-m);
 }
 
 .badgeFinished {
-  background: rgba(80, 120, 255, 0.03);
-  color: #3a3c55;
-  border: 1px solid rgba(80, 120, 255, 0.08);
+  background: transparent;
+  color: var(--fg-dim);
+  border: 1px solid var(--border);
 }
 
 /* ── Card bottom row ─────────────────────────────────────── */
@@ -221,7 +222,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  border-top: 1px solid rgba(80, 120, 255, 0.08);
+  border-top: 1px solid var(--border);
   padding-top: 10px;
 }
 
@@ -234,16 +235,16 @@
 .rank {
   font-size: 20px;
   font-weight: 700;
-  color: #9098c0;
+  color: var(--fg-2);
 }
 
 .rankFirst {
-  color: #ffd700;
+  color: var(--gold);
 }
 
 .rankSub {
   font-size: 11px;
-  color: #3a3c55;
+  color: var(--fg-dim);
 }
 
 .pointsBlock {
@@ -256,20 +257,20 @@
 .pointsValue {
   font-size: 16px;
   font-weight: 600;
-  color: #00b4ff;
+  color: var(--accent);
 }
 
 .pointsLabel {
   font-size: 11px;
-  color: #3a3c55;
+  color: var(--fg-dim);
 }
 
 .viewBtn {
   padding: 6px 14px;
   border-radius: 8px;
-  border: 1px solid rgba(80, 120, 255, 0.2);
-  background: rgba(80, 120, 255, 0.06);
-  color: #9098c0;
+  border: 1px solid var(--border-m);
+  background: var(--accent-bg);
+  color: var(--fg-2);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -277,14 +278,14 @@
 }
 
 .viewBtn:hover {
-  background: rgba(80, 120, 255, 0.12);
+  background: var(--accent-bg-h);
 }
 
 /* ── Skeleton card ───────────────────────────────────────── */
 .skeleton {
   height: 112px;
   border-radius: 16px;
-  background: linear-gradient(90deg, #0d0d20 25%, #13132a 50%, #0d0d20 75%);
+  background: linear-gradient(90deg, var(--sk-from) 25%, var(--sk-mid) 50%, var(--sk-from) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s ease infinite;
 }
@@ -302,7 +303,7 @@
   justify-content: center;
   gap: 8px;
   padding: 60px 20px;
-  color: #3a3c55;
+  color: var(--fg-dim);
   font-size: 14px;
 }
 
@@ -312,7 +313,7 @@
 
 .emptyHint {
   font-size: 12px;
-  color: #2a2c40;
+  color: var(--fg-ghost);
 }
 
 /* ── FAB row ─────────────────────────────────────────────── */
@@ -330,27 +331,27 @@
   padding: 14px 28px;
   border-radius: 28px;
   border: none;
-  background: linear-gradient(135deg, #0055ff 0%, #00b4ff 100%);
+  background: var(--grad);
   color: #fff;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 24px rgba(0, 100, 255, 0.4);
+  box-shadow: 0 4px 24px rgba(32, 144, 208, 0.4);
   white-space: nowrap;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .fab:active {
   transform: scale(0.97);
-  box-shadow: 0 2px 12px rgba(0, 100, 255, 0.3);
+  box-shadow: 0 2px 12px rgba(32, 144, 208, 0.3);
 }
 
 .fabSecondary {
   padding: 14px 20px;
   border-radius: 28px;
-  border: 1px solid rgba(80, 120, 255, 0.25);
-  background: rgba(80, 120, 255, 0.08);
-  color: #9098c0;
+  border: 1px solid var(--border-m);
+  background: var(--accent-bg);
+  color: var(--fg-2);
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -359,5 +360,5 @@
 }
 
 .fabSecondary:active {
-  background: rgba(80, 120, 255, 0.14);
+  background: var(--accent-bg-h);
 }

@@ -4,7 +4,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(80, 120, 255, 0.07);
+  border-bottom: 1px solid var(--border);
 }
 
 .historyIcon {
@@ -19,9 +19,9 @@
   flex-shrink: 0;
 }
 
-.historyCorrect { background: rgba(0, 200, 83, 0.15);  color: #00c853; }
-.historyWrong   { background: rgba(255, 77, 77, 0.15);  color: #ff4d4d; }
-.historyNoPred  { background: rgba(80, 120, 255, 0.07); color: #3a3c55; }
+.historyCorrect { background: var(--win-bg);  color: var(--win); }
+.historyWrong   { background: var(--live-bg);  color: var(--live); }
+.historyNoPred  { background: var(--accent-bg); color: var(--fg-dim); }
 
 .historyInfo { flex: 1; min-width: 0; }
 
@@ -35,34 +35,34 @@
 
 .historyMeta {
   font-size: 11px;
-  color: #3a3c55;
+  color: var(--fg-dim);
   margin-top: 3px;
 }
 
-.historyPts     { font-size: 13px; font-weight: 600; color: #00c853; white-space: nowrap; }
-.historyPtsZero { font-size: 13px; color: #2a2c40; white-space: nowrap; }
+.historyPts     { font-size: 13px; font-weight: 600; color: var(--win); white-space: nowrap; }
+.historyPtsZero { font-size: 13px; color: var(--fg-ghost); white-space: nowrap; }
 
 .shareBtn {
   padding: 5px 12px;
   border-radius: 8px;
-  border: 1px solid rgba(0, 100, 255, 0.35);
-  background: rgba(0, 80, 255, 0.1);
-  color: #5599ff;
+  border: 1px solid var(--border-accent);
+  background: rgba(16, 112, 192, 0.06);
+  color: var(--accent-2);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s;
 }
-.shareBtn:hover { background: rgba(0, 80, 255, 0.18); }
+.shareBtn:hover { background: rgba(16, 112, 192, 0.12); }
 
 /* ── Layout ──────────────────────────────────────────────── */
 .container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: #07071a;
-  color: #eef0ff;
+  background: var(--bg);
+  color: var(--fg);
   padding-bottom: 32px;
 }
 
@@ -71,14 +71,14 @@
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background: #07071a;
+  background: var(--bg);
 }
 
 .spinner {
   width: 36px;
   height: 36px;
-  border: 3px solid rgba(80, 120, 255, 0.12);
-  border-top-color: #00b4ff;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -94,8 +94,8 @@
   justify-content: center;
   height: 100vh;
   gap: 16px;
-  color: #5a6080;
-  background: #07071a;
+  color: var(--fg-muted);
+  background: var(--bg);
 }
 
 /* ── Header ──────────────────────────────────────────────── */
@@ -104,13 +104,13 @@
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  border-bottom: 1px solid rgba(80, 120, 255, 0.12);
+  border-bottom: 1px solid var(--border);
 }
 
 .back {
-  background: rgba(80, 120, 255, 0.08);
+  background: var(--accent-bg);
   border: none;
-  color: #eef0ff;
+  color: var(--fg);
   font-size: 18px;
   width: 36px;
   height: 36px;
@@ -137,7 +137,7 @@
 
 .leagueSub {
   font-size: 12px;
-  color: #3a3c55;
+  color: var(--fg-dim);
   margin-top: 2px;
 }
 
@@ -150,14 +150,14 @@
 
 .codeLabel {
   font-size: 10px;
-  color: #3a3c55;
+  color: var(--fg-dim);
 }
 
 .code {
   font-size: 13px;
   font-weight: 700;
   font-family: monospace;
-  color: #00b4ff;
+  color: var(--accent);
   letter-spacing: 1px;
 }
 
@@ -166,8 +166,8 @@
   display: flex;
   align-items: center;
   padding: 12px 20px;
-  background: rgba(0, 60, 200, 0.08);
-  border-bottom: 1px solid rgba(0, 100, 255, 0.15);
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border-accent);
 }
 
 .myStat {
@@ -182,14 +182,14 @@
 
 .myStatLabel {
   font-size: 11px;
-  color: #3a3c55;
+  color: var(--fg-dim);
   margin-top: 2px;
 }
 
 .myStatDivider {
   width: 1px;
   height: 28px;
-  background: rgba(80, 120, 255, 0.15);
+  background: var(--border-m);
 }
 
 /* ── Tabs ────────────────────────────────────────────────── */
@@ -202,9 +202,9 @@
 .tab {
   padding: 7px 18px;
   border-radius: 20px;
-  border: 1px solid rgba(80, 120, 255, 0.2);
+  border: 1px solid var(--border-m);
   background: transparent;
-  color: #5a6080;
+  color: var(--fg-muted);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -212,7 +212,7 @@
 }
 
 .tabActive {
-  background: linear-gradient(135deg, #0055ff 0%, #00b4ff 100%);
+  background: var(--grad);
   border-color: transparent;
   color: #fff;
 }
@@ -228,19 +228,20 @@
 .empty {
   text-align: center;
   padding: 48px 0;
-  color: #3a3c55;
+  color: var(--fg-dim);
   font-size: 14px;
 }
 
 /* ── Match Card ──────────────────────────────────────────── */
 .matchCard {
-  background: #0d0d20;
-  border: 1px solid rgba(80, 120, 255, 0.12);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  box-shadow: var(--shadow-card);
 }
 
 .matchHeader {
@@ -251,7 +252,7 @@
 
 .matchTime {
   font-size: 12px;
-  color: #5a6080;
+  color: var(--fg-muted);
 }
 
 .matchTimeLive {
@@ -260,19 +261,19 @@
   gap: 6px;
   font-size: 12px;
   font-weight: 600;
-  color: #ff4d4d;
+  color: var(--live);
 }
 
 .matchTimeFinished {
   font-size: 12px;
-  color: #3a3c55;
+  color: var(--fg-dim);
 }
 
 .liveDot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #ff4d4d;
+  background: var(--live);
   flex-shrink: 0;
   animation: pulse 1.2s ease-in-out infinite;
 }
@@ -285,7 +286,7 @@
 .score {
   font-size: 14px;
   font-weight: 700;
-  color: #eef0ff;
+  color: var(--fg);
 }
 
 .teams {
@@ -307,7 +308,7 @@
 
 .vs {
   font-size: 11px;
-  color: #2a2c40;
+  color: var(--fg-ghost);
   flex-shrink: 0;
 }
 
@@ -321,9 +322,9 @@
   flex: 1;
   padding: 8px 4px;
   border-radius: 10px;
-  border: 1px solid rgba(80, 120, 255, 0.15);
-  background: rgba(80, 120, 255, 0.05);
-  color: #5a6080;
+  border: 1px solid var(--border);
+  background: var(--accent-bg);
+  color: var(--fg-muted);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -336,21 +337,21 @@
 }
 
 .outcomeBtnSelected {
-  background: rgba(0, 85, 255, 0.2);
-  border-color: #0055ff;
-  color: #eef0ff;
+  background: var(--accent-bg-sel);
+  border-color: var(--accent-2);
+  color: var(--fg);
 }
 
 .outcomeBtnCorrect {
-  background: rgba(0, 200, 83, 0.2);
-  border-color: #00c853;
-  color: #00c853;
+  background: var(--win-bg);
+  border-color: var(--win);
+  color: var(--win);
 }
 
 .outcomeBtnWrong {
-  background: rgba(255, 77, 77, 0.12);
-  border-color: rgba(255, 77, 77, 0.35);
-  color: #ff4d4d;
+  background: var(--live-bg);
+  border-color: var(--live-border);
+  color: var(--live);
   text-decoration: line-through;
 }
 
@@ -366,9 +367,10 @@
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  background: #0d0d20;
+  background: var(--bg-elevated);
   border-radius: 10px;
-  border: 1px solid rgba(80, 120, 255, 0.1);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
 }
 
 .memberRank {
@@ -387,7 +389,7 @@
 .memberPoints {
   font-size: 14px;
   font-weight: 700;
-  color: #00b4ff;
+  color: var(--accent);
 }
 
 /* ── Waiting for players banner ─────────────────────────── */
@@ -397,10 +399,10 @@
   gap: 8px;
   margin: 12px 16px;
   padding: 12px 14px;
-  background: rgba(255, 170, 0, 0.08);
-  border: 1px solid rgba(255, 170, 0, 0.22);
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
   border-radius: 10px;
   font-size: 13px;
-  color: #ffaa00;
+  color: var(--warn);
   line-height: 1.4;
 }

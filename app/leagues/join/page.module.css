@@ -3,8 +3,8 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: #07071a;
-  color: #eef0ff;
+  background: var(--bg);
+  color: var(--fg);
 }
 
 /* ── Header ──────────────────────────────────────────────── */
@@ -13,13 +13,13 @@
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  border-bottom: 1px solid rgba(80, 120, 255, 0.12);
+  border-bottom: 1px solid var(--border);
 }
 
 .back {
-  background: rgba(80, 120, 255, 0.08);
+  background: var(--accent-bg);
   border: none;
-  color: #eef0ff;
+  color: var(--fg);
   font-size: 18px;
   width: 36px;
   height: 36px;
@@ -45,7 +45,7 @@
 
 .hint {
   font-size: 14px;
-  color: #3a3c55;
+  color: var(--fg-dim);
 }
 
 /* ── Code input row ──────────────────────────────────────── */
@@ -56,14 +56,14 @@
 
 .codeInput {
   flex: 1;
-  background: #0d0d20;
-  border: 1px solid rgba(80, 120, 255, 0.18);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 14px 16px;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: 3px;
-  color: #eef0ff;
+  color: var(--fg);
   text-transform: uppercase;
   font-family: monospace;
   outline: none;
@@ -71,11 +71,11 @@
 }
 
 .codeInput:focus {
-  border-color: #0055ff;
+  border-color: var(--accent-2);
 }
 
 .codeInput::placeholder {
-  color: #2a2c40;
+  color: var(--fg-ghost);
   letter-spacing: 2px;
   font-weight: 400;
 }
@@ -84,7 +84,7 @@
   padding: 0 20px;
   border-radius: 12px;
   border: none;
-  background: linear-gradient(135deg, #0055ff 0%, #00b4ff 100%);
+  background: var(--grad);
   color: #fff;
   font-size: 14px;
   font-weight: 600;
@@ -106,10 +106,10 @@
 /* ── Error ───────────────────────────────────────────────── */
 .errorMsg {
   font-size: 14px;
-  color: #ff4d4d;
+  color: var(--live);
   padding: 12px 16px;
-  background: rgba(255, 77, 77, 0.08);
-  border: 1px solid rgba(255, 77, 77, 0.2);
+  background: var(--live-bg);
+  border: 1px solid var(--live-border);
   border-radius: 10px;
 }
 
@@ -119,18 +119,18 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  background: rgba(0, 180, 255, 0.07);
-  border: 1px solid rgba(0, 180, 255, 0.2);
+  background: var(--accent-bg);
+  border: 1px solid var(--border-m);
   border-radius: 14px;
   font-size: 14px;
-  color: #9098c0;
+  color: var(--fg-2);
 }
 
 .goBtn {
   padding: 8px 16px;
   border-radius: 8px;
   border: none;
-  background: linear-gradient(135deg, #0055ff 0%, #00b4ff 100%);
+  background: var(--grad);
   color: #fff;
   font-size: 13px;
   font-weight: 700;
@@ -139,13 +139,14 @@
 
 /* ── League card ─────────────────────────────────────────── */
 .leagueCard {
-  background: #0d0d20;
-  border: 1px solid rgba(80, 120, 255, 0.12);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  box-shadow: var(--shadow-card);
 }
 
 .leagueTop {
@@ -165,7 +166,7 @@
 
 .leagueMeta {
   font-size: 12px;
-  color: #3a3c55;
+  color: var(--fg-dim);
   margin-top: 3px;
 }
 
@@ -174,18 +175,18 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 0;
-  border-top: 1px solid rgba(80, 120, 255, 0.08);
+  border-top: 1px solid var(--border);
 }
 
 .feeLabel {
   font-size: 14px;
-  color: #3a3c55;
+  color: var(--fg-dim);
 }
 
 .feeValue {
   font-size: 18px;
   font-weight: 700;
-  color: #00b4ff;
+  color: var(--accent);
 }
 
 /* ── Transaction wrapper ─────────────────────────────────── */
@@ -200,7 +201,7 @@
   padding: 16px;
   border-radius: 14px;
   border: none;
-  background: linear-gradient(135deg, #0055ff 0%, #00b4ff 100%);
+  background: var(--grad);
   color: #fff;
   font-size: 16px;
   font-weight: 700;

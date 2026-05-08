@@ -3,8 +3,8 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: #07071a;
-  color: #eef0ff;
+  background: var(--bg);
+  color: var(--fg);
 }
 
 /* ── Header ──────────────────────────────────────────────── */
@@ -13,13 +13,13 @@
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  border-bottom: 1px solid rgba(80, 120, 255, 0.12);
+  border-bottom: 1px solid var(--border);
 }
 
 .back {
-  background: rgba(80, 120, 255, 0.08);
+  background: var(--accent-bg);
   border: none;
-  color: #eef0ff;
+  color: var(--fg);
   font-size: 18px;
   width: 36px;
   height: 36px;
@@ -55,9 +55,9 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 2px solid rgba(80, 120, 255, 0.2);
+  border: 2px solid var(--border-m);
   background: transparent;
-  color: #3a3c55;
+  color: var(--fg-dim);
   font-size: 12px;
   font-weight: 700;
   display: flex;
@@ -68,37 +68,37 @@
 }
 
 .progressActive {
-  border-color: #0055ff;
-  background: linear-gradient(135deg, #0055ff 0%, #00b4ff 100%);
+  border-color: var(--accent-2);
+  background: var(--grad);
   color: #fff;
 }
 
 .progressDone {
-  border-color: #00b4ff;
-  background: #00b4ff;
+  border-color: var(--accent);
+  background: var(--accent);
   color: #fff;
 }
 
 .progressLabel {
   font-size: 12px;
-  color: #3a3c55;
+  color: var(--fg-dim);
   white-space: nowrap;
 }
 
 .progressLabelActive {
-  color: #9098c0;
+  color: var(--fg-2);
   font-weight: 600;
 }
 
 .progressLine {
   width: 32px;
   height: 2px;
-  background: rgba(80, 120, 255, 0.15);
+  background: var(--border-m);
   margin: 0 4px;
 }
 
 .progressLineDone {
-  background: linear-gradient(90deg, #0055ff, #00b4ff);
+  background: var(--grad);
 }
 
 /* ── Body ────────────────────────────────────────────────── */
@@ -121,35 +121,35 @@
 
 .stepDesc {
   font-size: 14px;
-  color: #3a3c55;
+  color: var(--fg-dim);
   margin-top: -10px;
 }
 
 /* ── Name input ──────────────────────────────────────────── */
 .input {
   width: 100%;
-  background: #0d0d20;
-  border: 1px solid rgba(80, 120, 255, 0.18);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 14px 16px;
   font-size: 16px;
-  color: #eef0ff;
+  color: var(--fg);
   outline: none;
   font-family: inherit;
   transition: border-color 0.15s ease;
 }
 
 .input:focus {
-  border-color: #0055ff;
+  border-color: var(--accent-2);
 }
 
 .input::placeholder {
-  color: #2a2c40;
+  color: var(--fg-ghost);
 }
 
 .charCount {
   font-size: 12px;
-  color: #2a2c40;
+  color: var(--fg-ghost);
   align-self: flex-end;
   margin-top: -10px;
 }
@@ -166,17 +166,18 @@
   align-items: center;
   gap: 14px;
   padding: 16px;
-  background: #0d0d20;
-  border: 1px solid rgba(80, 120, 255, 0.12);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   border-radius: 14px;
   cursor: pointer;
   text-align: left;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: var(--shadow-sm);
 }
 
 .sportCardActive {
-  border-color: #0055ff;
-  background: rgba(0, 85, 255, 0.1);
+  border-color: var(--accent-2);
+  background: var(--accent-bg-act);
 }
 
 .sportEmoji {
@@ -187,13 +188,13 @@
 .sportLabel {
   font-size: 15px;
   font-weight: 600;
-  color: #eef0ff;
+  color: var(--fg);
   display: block;
 }
 
 .sportDesc {
   font-size: 12px;
-  color: #3a3c55;
+  color: var(--fg-dim);
   display: block;
   margin-top: 2px;
 }
@@ -209,31 +210,33 @@
   flex: 1;
   min-width: 60px;
   padding: 14px 8px;
-  background: #0d0d20;
-  border: 1px solid rgba(80, 120, 255, 0.12);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   border-radius: 12px;
-  color: #5a6080;
+  color: var(--fg-muted);
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
+  box-shadow: var(--shadow-sm);
 }
 
 .feeBtnActive {
-  background: rgba(0, 85, 255, 0.15);
-  border-color: #0055ff;
-  color: #eef0ff;
+  background: var(--accent-bg-act);
+  border-color: var(--accent-2);
+  color: var(--fg);
 }
 
 /* ── Summary ─────────────────────────────────────────────── */
 .summary {
-  background: rgba(80, 120, 255, 0.04);
-  border: 1px solid rgba(80, 120, 255, 0.12);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  box-shadow: var(--shadow-sm);
 }
 
 .summaryRow {
@@ -243,18 +246,18 @@
 }
 
 .summaryRow span:first-child {
-  color: #3a3c55;
+  color: var(--fg-dim);
 }
 
 .summaryHighlight {
-  color: #00b4ff;
+  color: var(--accent);
   font-weight: 700;
 }
 
 /* ── Footer CTA ──────────────────────────────────────────── */
 .footer {
   padding: 16px;
-  border-top: 1px solid rgba(80, 120, 255, 0.1);
+  border-top: 1px solid var(--border);
 }
 
 .cta {
@@ -262,7 +265,7 @@
   padding: 16px;
   border-radius: 16px;
   border: none;
-  background: linear-gradient(135deg, #0055ff 0%, #00b4ff 100%);
+  background: var(--grad);
   color: #fff;
   font-size: 16px;
   font-weight: 700;
@@ -288,21 +291,21 @@
   justify-content: space-between;
   margin-top: 20px;
   padding: 14px 16px;
-  background: rgba(80, 120, 255, 0.05);
+  background: var(--accent-bg);
   border-radius: 12px;
-  border: 1px solid rgba(80, 120, 255, 0.1);
+  border: 1px solid var(--border);
 }
 
 .toggleLabel {
   font-size: 14px;
   font-weight: 500;
-  color: #eef0ff;
+  color: var(--fg);
   margin: 0 0 2px;
 }
 
 .toggleDesc {
   font-size: 12px;
-  color: #3a3c55;
+  color: var(--fg-dim);
   margin: 0;
 }
 
@@ -311,7 +314,7 @@
   height: 24px;
   border-radius: 12px;
   border: none;
-  background: rgba(80, 120, 255, 0.2);
+  background: var(--border-m);
   position: relative;
   cursor: pointer;
   flex-shrink: 0;
@@ -331,7 +334,7 @@
 }
 
 .toggleOn {
-  background: linear-gradient(135deg, #0055ff 0%, #00b4ff 100%);
+  background: var(--grad);
 }
 
 .toggleOn::after {
@@ -345,7 +348,7 @@
 
 .minPlayersLabel {
   font-size: 13px;
-  color: #5a6080;
+  color: var(--fg-muted);
   margin-bottom: 8px;
 }
 
@@ -358,15 +361,15 @@
   flex: 1;
   padding: 8px 0;
   border-radius: 8px;
-  border: 1px solid rgba(80, 120, 255, 0.15);
-  background: rgba(80, 120, 255, 0.05);
-  color: #9098c0;
+  border: 1px solid var(--border);
+  background: var(--accent-bg);
+  color: var(--fg-2);
   font-size: 14px;
   cursor: pointer;
 }
 
 .minBtnActive {
-  border-color: #0055ff;
-  background: rgba(0, 85, 255, 0.15);
-  color: #eef0ff;
+  border-color: var(--accent-2);
+  background: var(--accent-bg-act);
+  color: var(--fg);
 }

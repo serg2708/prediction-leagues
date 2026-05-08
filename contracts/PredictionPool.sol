@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.31;
+pragma solidity 0.8.35;
 
 /**
  * @title PredictionPool
@@ -45,9 +45,10 @@ contract PredictionPool {
     error NotOwner();
     error LeagueNotFound();
     error AlreadyDeposited();
-    error WrongAmount();
+
     error AlreadyPaid();
     error TransferFailed();
+    error NotDepositor();
 
     // ── Modifiers ──────────────────────────────────────────────────────────
 
@@ -81,21 +82,24 @@ contract PredictionPool {
      */
     function payout(bytes32 leagueId, address winner) external onlyOwner {
         League storage league = leagues[leagueId];
-        if (league.entryFee == 0)  revert LeagueNotFound();
-        if (league.paid)            revert AlreadyPaid();
+        if (league.entryFee == 0)       revert LeagueNotFound();
+        if (league.paid)                revert AlreadyPaid();
+        if (!league.deposited[winner])  revert NotDepositor();
 
         uint256 amount = league.pool;
         league.paid    = true;
         league.pool    = 0;
 
-        if (!usdc.transfer(winner, amount)) revert TransferFailed();
         emit Payout(leagueId, winner, amount);
+
+        if (!usdc.transfer(winner, amount)) revert TransferFailed();
     }
 
     /**
      * @notice Transfer contract ownership (e.g. to a multisig).
      */
     function transferOwnership(address newOwner) external onlyOwner {
+        if (newOwner == address(0)) revert NotOwner();
         emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;
     }
@@ -114,10 +118,10 @@ contract PredictionPool {
         league.deposited[msg.sender] = true;
         league.pool += league.entryFee;
 
+        emit Deposited(leagueId, msg.sender, league.entryFee);
+
         if (!usdc.transferFrom(msg.sender, address(this), league.entryFee))
             revert TransferFailed();
-
-        emit Deposited(leagueId, msg.sender, league.entryFee);
     }
 
     // ── Views ──────────────────────────────────────────────────────────────

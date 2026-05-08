@@ -170,6 +170,31 @@ function LeagueBlock({ league, secret }: { league: League; secret: string }) {
   const [syncing, setSyncing]   = useState(false);
   const [syncMsg, setSyncMsg]   = useState<string | null>(null);
   const [syncErr, setSyncErr]   = useState<string | null>(null);
+  const [paying, setPaying]     = useState(false);
+  const [payMsg, setPayMsg]     = useState<string | null>(null);
+  const [payErr, setPayErr]     = useState<string | null>(null);
+
+  async function finalise() {
+    setPaying(true);
+    setPayMsg(null);
+    setPayErr(null);
+    const res = await fetch("/api/admin/finalise-league", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${secret}`,
+      },
+      body: JSON.stringify({ league_id: league.id }),
+    });
+    const json = await res.json() as { ok?: boolean; winnerName?: string; txHash?: string; payout?: string; error?: string };
+    setPaying(false);
+    if (json.ok) {
+      const tx = json.txHash ? ` · tx: ${json.txHash.slice(0, 10)}…` : (json.payout ?? "");
+      setPayMsg(`Paid out to ${json.winnerName ?? json.txHash}${tx}`);
+    } else {
+      setPayErr(json.error ?? "Error");
+    }
+  }
 
   const loadMatches = useCallback(async () => {
     setLoadingM(true);
@@ -254,6 +279,22 @@ function LeagueBlock({ league, secret }: { league: League; secret: string }) {
         </div>
         <span className={`${styles.chevron} ${open ? styles.chevronOpen : ""}`}>▼</span>
       </button>
+
+      {league.status === "finished" && (
+        <div className={styles.syncRow}>
+          <button
+            type="button"
+            className={styles.syncBtn}
+            style={{ background: "#1a6fff" }}
+            disabled={paying}
+            onClick={finalise}
+          >
+            {paying ? "Processing…" : "💸 Payout winner"}
+          </button>
+          {payMsg && <span className={styles.syncMsg}>{payMsg}</span>}
+          {payErr && <span className={styles.syncErr}>{payErr}</span>}
+        </div>
+      )}
 
       {open && (
         <>

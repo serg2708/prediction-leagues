@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Source_Code_Pro } from "next/font/google";
+import Script from "next/script";
 import { minikitConfig } from "@/minikit.config";
 import { ClientDynamicWrapper } from "./ClientDynamicWrapper";
 import "./globals.css";
@@ -43,6 +44,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${sourceCodePro.variable}`}>
+        <Script id="theme-init" strategy="beforeInteractive">
+          {`(function(){var t=localStorage.getItem('theme');if(t==='light')document.documentElement.setAttribute('data-theme','light')})()`}
+        </Script>
         <ClientDynamicWrapper>{children}</ClientDynamicWrapper>
       </body>
     </html>

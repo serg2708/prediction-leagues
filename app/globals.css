@@ -1,7 +1,100 @@
 @layer base {
   :root {
-    --background: #07071a;
-    --foreground: #eef0ff;
+    /* ── Backgrounds ── */
+    --bg: #0a0a1f;
+    --bg-elevated: #14143a;
+    --bg-subtle: rgba(31, 31, 143, 0.06);
+    --bg-input: #14143a;
+
+    /* ── Text ── */
+    --fg: #f0f0f0;
+    --fg-2: #a8b0d8;
+    --fg-muted: #6e76a8;
+    --fg-dim: #4a5080;
+    --fg-ghost: #2e3260;
+
+    /* ── Borders ── */
+    --border: rgba(120, 144, 224, 0.12);
+    --border-m: rgba(120, 144, 224, 0.2);
+    --border-accent: rgba(32, 144, 208, 0.35);
+
+    /* ── Accent ── */
+    --accent: #20a0e0;
+    --accent-2: #1070c0;
+    --accent-bg: rgba(120, 144, 224, 0.06);
+    --accent-bg-h: rgba(120, 144, 224, 0.12);
+    --accent-bg-sel: rgba(31, 31, 143, 0.2);
+    --accent-bg-act: rgba(31, 31, 143, 0.15);
+    --grad: linear-gradient(135deg, #1070c0 0%, #20a0e0 100%);
+    --grad-name: linear-gradient(135deg, #fff 0%, #20a0e0 100%);
+
+    /* ── Semantic ── */
+    --live: #ff4d4d;
+    --live-bg: rgba(255, 77, 77, 0.15);
+    --live-border: rgba(255, 77, 77, 0.3);
+    --win: #00c853;
+    --win-bg: rgba(0, 200, 83, 0.15);
+    --warn: #ffaa00;
+    --warn-bg: rgba(255, 170, 0, 0.08);
+    --warn-border: rgba(255, 170, 0, 0.22);
+    --gold: #ffd700;
+
+    /* ── Shadows ── */
+    --shadow: 0 8px 40px rgba(15, 15, 70, 0.6);
+    --shadow-card: none;
+    --shadow-sm: none;
+
+    /* ── Skeleton ── */
+    --sk-from: #14143a;
+    --sk-mid: #1c1c4a;
+
+    /* ── Body aliases ── */
+    --background: var(--bg);
+    --foreground: var(--fg);
+  }
+
+  /* ── Light theme — all tokens derived from light-theme.css ── */
+  [data-theme="light"] {
+    --bg: #f4f6fc;
+    --bg-elevated: #ffffff;
+    --bg-subtle: rgba(31, 31, 143, 0.04);
+    --bg-input: #ffffff;
+
+    --fg: #0a0a1f;
+    --fg-2: #3a3f6e;
+    --fg-muted: #6e76a8;
+    --fg-dim: #8a92b8;
+    --fg-ghost: #c2c8de;
+
+    --border: rgba(31, 31, 143, 0.08);
+    --border-m: rgba(31, 31, 143, 0.15);
+    --border-accent: rgba(16, 112, 192, 0.30);
+
+    --accent: #1070c0;
+    --accent-2: #0a5090;
+    --accent-bg: rgba(31, 31, 143, 0.04);
+    --accent-bg-h: rgba(31, 31, 143, 0.10);
+    --accent-bg-sel: rgba(16, 112, 192, 0.08);
+    --accent-bg-act: rgba(16, 112, 192, 0.06);
+    --grad: linear-gradient(135deg, #0a5090 0%, #1070c0 100%);
+    --grad-name: linear-gradient(135deg, #1070c0 0%, #20a0e0 100%);
+
+    --live: #c4253b;
+    --live-bg: rgba(230, 57, 70, 0.10);
+    --live-border: rgba(230, 57, 70, 0.30);
+    --win: #007a30;
+    --win-bg: rgba(0, 160, 64, 0.10);
+    --warn: #b88800;
+    --warn-bg: rgba(214, 137, 0, 0.10);
+    --warn-border: rgba(214, 137, 0, 0.30);
+    --gold: #b88800;
+
+    --shadow: 0 8px 40px rgba(32, 48, 160, 0.15);
+    --shadow-card: 0 1px 3px rgba(15, 15, 70, 0.05), 0 6px 16px rgba(15, 15, 70, 0.04);
+    --shadow-sm: 0 1px 2px rgba(15, 15, 70, 0.04);
+
+    --sk-from: #e8ebff;
+    --sk-mid: #d5d8f0;
   }
 
   html,
@@ -19,9 +112,9 @@
   }
 
   code {
-    background-color: rgba(80, 120, 255, 0.08);
+    background-color: var(--accent-bg);
     border-radius: 6px;
-    border: 1px solid rgba(80, 120, 255, 0.15);
+    border: 1px solid var(--border);
     font-family: var(--font-source-code-pro), monospace;
     font-size: 0.875rem;
     padding: 0.25rem 0.5rem calc(0.25rem + 2px);
@@ -40,5 +133,9 @@
 
   html {
     color-scheme: dark;
+  }
+
+  html[data-theme="light"] {
+    color-scheme: light;
   }
 }
