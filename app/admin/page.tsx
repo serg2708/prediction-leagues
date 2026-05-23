@@ -15,21 +15,17 @@ const FOOTBALL_COMPETITIONS = [
 
 const SPORT_EMOJI: Record<Sport, string> = { football: "⚽", cs2: "🎮", nba: "🏀" };
 
-const OUTCOMES_BY_SPORT: Record<Sport, { value: PredictionOutcome; label: string }[]> = {
-  football: [
-    { value: "home", label: "Home" },
+function getOutcomes(sport: Sport, match: Match): { value: PredictionOutcome; label: string }[] {
+  if (sport === "football") return [
+    { value: "home", label: match.team_home },
     { value: "draw", label: "Draw" },
-    { value: "away", label: "Away" },
-  ],
-  cs2: [
-    { value: "team1", label: "Team 1" },
-    { value: "team2", label: "Team 2" },
-  ],
-  nba: [
-    { value: "team1", label: "Home" },
-    { value: "team2", label: "Away" },
-  ],
-};
+    { value: "away", label: match.team_away },
+  ];
+  return [
+    { value: "team1", label: match.team_home },
+    { value: "team2", label: match.team_away },
+  ];
+}
 
 function fmt(iso: string) {
   return new Date(iso).toLocaleString("en-GB", {
@@ -59,7 +55,7 @@ function MatchRow({
   const [saving, setSaving]   = useState(false);
   const [done, setDone]       = useState(match.status === "finished");
 
-  const outcomes = OUTCOMES_BY_SPORT[sport];
+  const outcomes = getOutcomes(sport, match);
 
   async function confirm() {
     if (!selected) return;
@@ -161,8 +157,8 @@ function LeagueBlock({ league, secret }: { league: League; secret: string }) {
   const [open, setOpen]         = useState(false);
   const [matches, setMatches]   = useState<Match[]>([]);
   const [loadingM, setLoadingM] = useState(false);
-  const [competition, setComp]  = useState("PL");
-  const [tournament, setTournament]   = useState("");
+  const [competition, setComp]  = useState(league.competition_id ?? "PL");
+  const [tournament, setTournament]   = useState(league.competition_id ?? "");
   const [tournamentQ, setTournamentQ] = useState("");
   const [tournamentResults, setTournamentResults] = useState<{ slug: string; name: string }[]>([]);
   const [searching, setSearching]     = useState(false);
@@ -173,6 +169,30 @@ function LeagueBlock({ league, secret }: { league: League; secret: string }) {
   const [paying, setPaying]     = useState(false);
   const [payMsg, setPayMsg]     = useState<string | null>(null);
   const [payErr, setPayErr]     = useState<string | null>(null);
+  const [registering, setRegistering] = useState(false);
+  const [regMsg, setRegMsg]     = useState<string | null>(null);
+  const [regErr, setRegErr]     = useState<string | null>(null);
+
+  async function registerOnChain() {
+    setRegistering(true);
+    setRegMsg(null);
+    setRegErr(null);
+    const res = await fetch("/api/admin/register-league", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${secret}`,
+      },
+      body: JSON.stringify({ league_id: league.id }),
+    });
+    const json = await res.json() as { ok?: boolean; error?: string };
+    setRegistering(false);
+    if (json.ok) {
+      setRegMsg("Registered on-chain ✓");
+    } else {
+      setRegErr(json.error ?? "Error");
+    }
+  }
 
   async function finalise() {
     setPaying(true);
@@ -274,11 +294,26 @@ function LeagueBlock({ league, secret }: { league: League; secret: string }) {
             <div className={styles.leagueName}>{league.name}</div>
             <div className={styles.leagueMeta}>
               {league.invite_code} · ${league.pool_usdc} pool · {league.status}
+              {league.competition_id && <> · <span style={{ color: "#aaa" }}>{league.competition_id}</span></>}
             </div>
           </div>
         </div>
         <span className={`${styles.chevron} ${open ? styles.chevronOpen : ""}`}>▼</span>
       </button>
+
+      <div className={styles.syncRow}>
+        <button
+          type="button"
+          className={styles.syncBtn}
+          style={{ background: "#444" }}
+          disabled={registering}
+          onClick={registerOnChain}
+        >
+          {registering ? "Registering…" : "⛓ Re-register on chain"}
+        </button>
+        {regMsg && <span className={styles.syncMsg}>{regMsg}</span>}
+        {regErr && <span className={styles.syncErr}>{regErr}</span>}
+      </div>
 
       {league.status === "finished" && (
         <div className={styles.syncRow}>
