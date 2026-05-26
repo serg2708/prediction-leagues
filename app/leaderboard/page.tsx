@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { BottomNav } from "@/app/components/BottomNav";
+import { ThemeToggle } from "@/app/components/ThemeToggle";
+import { ChevronLeft, User, Medal } from "@/app/components/Icons";
 import styles from "./page.module.css";
 
 interface LeaderboardEntry {
@@ -64,17 +67,22 @@ export default function LeaderboardPage() {
 
   const top3 = entries.slice(0, 3);
   const rest = entries.slice(3);
-  const medals = ["🥇", "🥈", "🥉"];
-  const podiumOrder = top3.length === 3 ? [top3[1], top3[0], top3[2]] : top3;
-  const podiumClasses = top3.length === 3
-    ? [styles.podiumSecond, styles.podiumFirst, styles.podiumThird]
-    : [styles.podiumFirst, styles.podiumSecond, styles.podiumThird];
+  // Re-order so 1st is always in the center: [2nd, 1st, 3rd]
+  const podiumOrder =
+    top3.length === 3 ? [top3[1], top3[0], top3[2]] :
+    top3.length === 2 ? [top3[1], top3[0]]           :
+    top3;
+  const podiumClasses =
+    top3.length === 3 ? [styles.podiumSecond, styles.podiumFirst, styles.podiumThird] :
+    top3.length === 2 ? [styles.podiumSecond, styles.podiumFirst]                     :
+    [styles.podiumFirst];
 
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <button type="button" className={styles.back} onClick={() => router.back()}>←</button>
+        <button type="button" className={styles.back} onClick={() => router.back()}><ChevronLeft /></button>
         <h1 className={styles.title}>Global Leaderboard</h1>
+        <div style={{ marginLeft: "auto" }}><ThemeToggle /></div>
       </header>
 
       {loading ? (
@@ -93,10 +101,10 @@ export default function LeaderboardPage() {
                     <div className={styles.podiumAvatar}>
                       {entry.avatar_url
                         ? <img src={entry.avatar_url} alt={entry.display_name} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
-                        : "👤"
+                        : <User size={28} />
                       }
                     </div>
-                    <span className={styles.podiumMedal}>{medals[origIndex]}</span>
+                    <Medal rank={(origIndex + 1) as 1 | 2 | 3} size={20} />
                     <span className={styles.podiumName}>{entry.display_name}</span>
                     <span className={styles.podiumPts}>{entry.total_points} pts</span>
                   </div>
@@ -113,7 +121,7 @@ export default function LeaderboardPage() {
                 <div className={styles.rowAvatar}>
                   {entry.avatar_url
                     ? <img src={entry.avatar_url} alt={entry.display_name} />
-                    : "👤"
+                    : <User size={18} />
                   }
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -126,6 +134,7 @@ export default function LeaderboardPage() {
           </div>
         </>
       )}
+      <BottomNav />
     </div>
   );
 }

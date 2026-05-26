@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/notify-upcoming",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/finalise-leagues",
+      "schedule": "0 9 * * *"
     }
   ]
 }

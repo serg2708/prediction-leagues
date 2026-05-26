@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { League, Match, PredictionOutcome, Sport } from "@/lib/types";
+import { SportIcon } from "@/app/components/Icons";
 import styles from "./page.module.css";
 
 const FOOTBALL_COMPETITIONS = [
@@ -13,7 +14,6 @@ const FOOTBALL_COMPETITIONS = [
   { value: "FL1", label: "Ligue 1" },
 ];
 
-const SPORT_EMOJI: Record<Sport, string> = { football: "⚽", cs2: "🎮", nba: "🏀" };
 
 function getOutcomes(sport: Sport, match: Match): { value: PredictionOutcome; label: string }[] {
   if (sport === "football") return [
@@ -289,7 +289,7 @@ function LeagueBlock({ league, secret }: { league: League; secret: string }) {
     <div className={styles.leagueBlock}>
       <button type="button" className={styles.leagueHeader} onClick={() => setOpen((o) => !o)}>
         <div className={styles.leagueInfo}>
-          <span style={{ fontSize: 22 }}>{SPORT_EMOJI[league.sport]}</span>
+          <span style={{ display: "flex" }}><SportIcon sport={league.sport} size={22} /></span>
           <div>
             <div className={styles.leagueName}>{league.name}</div>
             <div className={styles.leagueMeta}>
@@ -441,6 +441,14 @@ export default function AdminPage() {
   const [authErr, setAuthErr]   = useState(false);
   const [leagues, setLeagues]   = useState<League[]>([]);
   const [loading, setLoading]   = useState(false);
+
+  useEffect(() => {
+    const frame = document.querySelector(".app-frame") as HTMLElement | null;
+    if (!frame) return;
+    const prev = frame.style.maxWidth;
+    frame.style.maxWidth = "100%";
+    return () => { frame.style.maxWidth = prev; };
+  }, []);
 
   async function login() {
     setLoading(true);

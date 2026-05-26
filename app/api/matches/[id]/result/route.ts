@@ -49,30 +49,43 @@ export async function POST(
     return NextResponse.json({ error: "result is required" }, { status: 400 });
   }
 
-  // 1 — Update match status + result
+  // 1 — Load match; bail out early if already finished (prevents double point awards)
   const { data: match, error: matchErr } = await supabase
     .from("matches")
-    .update({ status: "finished", result, score_home, score_away })
+    .select("id, league_id, team_home, team_away, status")
     .eq("id", matchId)
-    .select("id, league_id, team_home, team_away")
     .single();
 
   if (matchErr || !match) {
     return NextResponse.json({ error: matchErr?.message ?? "Match not found" }, { status: 404 });
   }
 
-  // 2 — Award points via DB function
+  if (match.status === "finished") {
+    return NextResponse.json({ ok: true, matchId, leagueId: match.league_id, skipped: "already finished" });
+  }
+
+  // 2 — Mark finished
+  const { error: updateErr } = await supabase
+    .from("matches")
+    .update({ status: "finished", result, score_home, score_away })
+    .eq("id", matchId);
+
+  if (updateErr) {
+    return NextResponse.json({ error: updateErr.message }, { status: 500 });
+  }
+
+  // 3 — Award points (safe: match was not finished before this call)
   await supabase.rpc("award_points", { p_match_id: matchId });
 
-  // 3 — Notify all league members who predicted correctly
+  // 4 — Notify all league members who predicted correctly
   const { data: correctPreds } = await supabase
     .from("predictions")
     .select("profile_id, profiles(fid)")
     .eq("match_id", matchId)
     .eq("outcome", result);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const correctFids = (correctPreds ?? [])
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .map((p: any) => (Array.isArray(p.profiles) ? p.profiles[0]?.fid : p.profiles?.fid) as number | null)
     .filter((f): f is number => !!f);
 
@@ -101,7 +114,16 @@ export async function POST(
 
 /** Find the winner, mark the league finished, send payout notification. */
 async function finaliseLeague(leagueId: string) {
-  // Get winner (highest points)
+  // Guard: skip if league is already finished (prevents double payout)
+  const { data: leagueCheck } = await supabase
+    .from("leagues")
+    .select("status")
+    .eq("id", leagueId)
+    .single();
+
+  if (leagueCheck?.status === "finished") return;
+
+  // Get top score
   const { data: top } = await supabase
     .from("league_leaderboard")
     .select("profile_id, points, profiles(fid)")
@@ -112,11 +134,22 @@ async function finaliseLeague(leagueId: string) {
 
   if (!top) return;
 
+  // Find all members tied at the top score
+  const { data: allTop } = await supabase
+    .from("league_leaderboard")
+    .select("profile_id, points")
+    .eq("league_id", leagueId)
+    .eq("points", top.points);
+
+  const winners = allTop ?? [top];
+  const isTie   = winners.length > 1;
+
   // Mark league finished
   await supabase
     .from("leagues")
     .update({ status: "finished" })
-    .eq("id", leagueId);
+    .eq("id", leagueId)
+    .neq("status", "finished");
 
   // Get pool amount for notification
   const { data: league } = await supabase
@@ -139,16 +172,19 @@ async function finaliseLeague(leagueId: string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const winnerFid = (Array.isArray(top.profiles) ? (top.profiles as any[])[0]?.fid : (top.profiles as any)?.fid) as number | null;
   if (winnerFid) {
-    // Personal winner notification
+    const prize = isTie
+      ? `$${((league?.pool_usdc ?? 0) / winners.length).toFixed(2)} (split)`
+      : `$${league?.pool_usdc}`;
     await sendNotifications(
       [winnerFid],
-      "You won! 🏆",
-      `You topped ${league?.name ?? "the league"} and won $${league?.pool_usdc} USDC!`,
+      isTie ? "Tie! 🤝🏆" : "You won! 🏆",
+      isTie
+        ? `It's a tie! You share the prize — ${prize} USDC from "${league?.name ?? "the league"}"!`
+        : `You topped ${league?.name ?? "the league"} and won ${prize} USDC!`,
       `${ORIGIN}/leagues/${leagueId}`
     );
   }
 
-  // Notify everyone else
   const otherFids = allFids.filter((f) => f !== winnerFid);
   if (otherFids.length) {
     await sendNotifications(
@@ -160,10 +196,10 @@ async function finaliseLeague(leagueId: string) {
   }
 
   // On-chain payout via backend signer
-  await onChainPayout(leagueId, top.profile_id as string);
+  await onChainPayout(leagueId, winners.map((w) => w.profile_id as string));
 }
 
-async function onChainPayout(leagueUuid: string, winnerAddress: string) {
+async function onChainPayout(leagueUuid: string, winnerAddresses: string[]) {
   const privateKey = process.env.POOL_SIGNER_PRIVATE_KEY;
   if (!privateKey) {
     console.warn("POOL_SIGNER_PRIVATE_KEY not set — skipping on-chain payout");
@@ -181,12 +217,20 @@ async function onChainPayout(leagueUuid: string, winnerAddress: string) {
   const leagueBytes32 = leagueIdToBytes32(leagueUuid);
 
   try {
-    const hash = await walletClient.writeContract({
-      address:      POOL_ADDRESS,
-      abi:          PREDICTION_POOL_ABI,
-      functionName: "payout",
-      args:         [leagueBytes32, winnerAddress as `0x${string}`],
-    });
+    const isTie = winnerAddresses.length > 1;
+    const hash = isTie
+      ? await walletClient.writeContract({
+          address:      POOL_ADDRESS,
+          abi:          PREDICTION_POOL_ABI,
+          functionName: "payoutMultiple",
+          args:         [leagueBytes32, winnerAddresses as `0x${string}`[]],
+        })
+      : await walletClient.writeContract({
+          address:      POOL_ADDRESS,
+          abi:          PREDICTION_POOL_ABI,
+          functionName: "payout",
+          args:         [leagueBytes32, winnerAddresses[0] as `0x${string}`],
+        });
 
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
     console.log(`Payout tx confirmed: ${receipt.transactionHash}`);

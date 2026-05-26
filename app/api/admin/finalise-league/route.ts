@@ -54,8 +54,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "League not found" }, { status: 404 });
   }
 
-  // Get winner from leaderboard
-  const { data: top } = await supabase
+  // Get top score
+  const { data: topOne } = await supabase
     .from("league_leaderboard")
     .select("profile_id, points, display_name")
     .eq("league_id", league_id)
@@ -63,9 +63,20 @@ export async function POST(req: NextRequest) {
     .limit(1)
     .single();
 
-  if (!top) {
+  if (!topOne) {
     return NextResponse.json({ error: "No members found" }, { status: 400 });
   }
+
+  // Find all members tied at the top score
+  const { data: allTop } = await supabase
+    .from("league_leaderboard")
+    .select("profile_id, points, display_name")
+    .eq("league_id", league_id)
+    .eq("points", topOne.points);
+
+  const winners = allTop ?? [topOne];
+  const isTie   = winners.length > 1;
+  const top      = topOne;
 
   // Mark league finished if not already
   if (league.status !== "finished") {
@@ -83,25 +94,29 @@ export async function POST(req: NextRequest) {
     .map((m: any) => (Array.isArray(m.profiles) ? m.profiles[0]?.fid : m.profiles?.fid) as number | null)
     .filter((f): f is number => !!f);
 
-  // Get winner fid
-  const { data: winnerProfile } = await supabase
+  // Notifications
+  const winnerIds = new Set(winners.map((w) => w.profile_id));
+  const { data: winnerProfiles } = await supabase
     .from("profiles")
-    .select("fid")
-    .eq("id", top.profile_id)
-    .single();
+    .select("id, fid")
+    .in("id", [...winnerIds]);
 
-  const winnerFid = winnerProfile?.fid as number | null;
+  const winnerFids = (winnerProfiles ?? [])
+    .map((p) => p.fid as number | null)
+    .filter((f): f is number => !!f);
 
-  if (winnerFid) {
-    await sendNotifications(
-      [winnerFid],
-      "You won! 🏆",
-      `You topped "${league.name}" and won $${league.pool_usdc} USDC!`,
-      `${ORIGIN}/leagues/${league_id}`
-    );
+  const prize = isTie
+    ? `$${(league.pool_usdc / winners.length).toFixed(2)}`
+    : `$${league.pool_usdc}`;
+
+  if (winnerFids.length) {
+    const msg = isTie
+      ? `It's a tie! You split the prize — ${prize} USDC each from "${league.name}"!`
+      : `You topped "${league.name}" and won ${prize} USDC!`;
+    await sendNotifications(winnerFids, isTie ? "Tie! 🤝🏆" : "You won! 🏆", msg, `${ORIGIN}/leagues/${league_id}`);
   }
 
-  const otherFids = allFids.filter((f) => f !== winnerFid);
+  const otherFids = allFids.filter((f) => !winnerFids.includes(f));
   if (otherFids.length) {
     await sendNotifications(
       otherFids,
@@ -118,8 +133,9 @@ export async function POST(req: NextRequest) {
   if (!privateKey) {
     return NextResponse.json({
       ok: true,
-      winner: top.profile_id,
-      winnerName: top.display_name,
+      isTie,
+      winners: winners.map((w) => w.profile_id),
+      winnerName: isTie ? `${winners.length} tied players` : top.display_name,
       points: top.points,
       payout: "skipped — POOL_SIGNER_PRIVATE_KEY not set",
     });
@@ -127,19 +143,31 @@ export async function POST(req: NextRequest) {
 
   try {
     const chainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 84532);
-    const chain = chainId === 8453 ? base : baseSepolia;
-    const rpcUrl = process.env.RPC_URL ?? chain.rpcUrls.default.http[0];
+    const chain   = chainId === 8453 ? base : baseSepolia;
+    const rpcUrl  = process.env.RPC_URL ?? chain.rpcUrls.default.http[0];
 
-    const account = privateKeyToAccount(privateKey as `0x${string}`);
+    const account = privateKeyToAccount(
+      (privateKey.startsWith("0x") ? privateKey : `0x${privateKey}`) as `0x${string}`
+    );
+    const leagueBytes32 = leagueIdToBytes32(league_id);
+    console.log(`[finalise-league] isTie=${isTie} winners=${winners.length} league=${leagueBytes32}`);
+
     const walletClient = createWalletClient({ account, chain, transport: http(rpcUrl) });
     const publicClient = createPublicClient({ chain, transport: http(rpcUrl) });
 
-    const hash = await walletClient.writeContract({
-      address: POOL_ADDRESS,
-      abi: PREDICTION_POOL_ABI,
-      functionName: "payout",
-      args: [leagueIdToBytes32(league_id), top.profile_id as `0x${string}`],
-    });
+    const hash = isTie
+      ? await walletClient.writeContract({
+          address: POOL_ADDRESS,
+          abi: PREDICTION_POOL_ABI,
+          functionName: "payoutMultiple",
+          args: [leagueBytes32, winners.map((w) => w.profile_id as `0x${string}`)],
+        })
+      : await walletClient.writeContract({
+          address: POOL_ADDRESS,
+          abi: PREDICTION_POOL_ABI,
+          functionName: "payout",
+          args: [leagueBytes32, top.profile_id as `0x${string}`],
+        });
 
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
     txHash = receipt.transactionHash;
@@ -148,8 +176,8 @@ export async function POST(req: NextRequest) {
     console.error("[finalise-league] On-chain payout failed:", err);
     return NextResponse.json({
       ok: false,
-      winner: top.profile_id,
-      winnerName: top.display_name,
+      isTie,
+      winners: winners.map((w) => w.profile_id),
       error: String(err),
     }, { status: 500 });
   }
@@ -157,8 +185,9 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     leagueId: league_id,
-    winner: top.profile_id,
-    winnerName: top.display_name,
+    isTie,
+    winners: winners.map((w) => w.profile_id),
+    winnerName: isTie ? `${winners.length} players tied` : top.display_name,
     points: top.points,
     txHash,
   });

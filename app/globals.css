@@ -1,141 +1,226 @@
+/* Prediction Leagues — globals.css
+   Drop-in replacement for the existing globals.css.
+   Token names are preserved where possible so most existing CSS Modules
+   keep working with minimal rewrites; new tokens are added at the bottom. */
+
 @layer base {
   :root {
-    /* ── Backgrounds ── */
-    --bg: #0a0a1f;
-    --bg-elevated: #14143a;
-    --bg-subtle: rgba(31, 31, 143, 0.06);
-    --bg-input: #14143a;
+    /* ── Surfaces ─────────────────────────────────────────── */
+    --bg:            #0A0C10;
+    --bg-elevated:   #13161F;   /* was: card surface */
+    --bg-raised:     #13161F;   /* new alias */
+    --bg-hover:      #1A1E2A;
+    --bg-input:      #0F1218;
+    --bg-subtle:     rgba(255,255,255,0.025);
 
-    /* ── Text ── */
-    --fg: #f0f0f0;
-    --fg-2: #a8b0d8;
-    --fg-muted: #6e76a8;
-    --fg-dim: #4a5080;
-    --fg-ghost: #2e3260;
+    /* Glass — sticky chrome (header, bottom nav, modals) */
+    --glass-fill:     rgba(20,24,34,0.55);
+    --glass-border:   rgba(255,255,255,0.08);
+    --glass-hairline: rgba(255,255,255,0.06);
+    --glass-filter:   blur(28px) saturate(160%);
+    --glass-shadow:   0 1px 0 rgba(255,255,255,0.08) inset, 0 -1px 0 rgba(0,0,0,0.30) inset, 0 20px 60px rgba(0,0,0,0.45);
 
-    /* ── Borders ── */
-    --border: rgba(120, 144, 224, 0.12);
-    --border-m: rgba(120, 144, 224, 0.2);
-    --border-accent: rgba(32, 144, 208, 0.35);
+    /* ── Text ─────────────────────────────────────────────── */
+    --fg:        #F4F5F7;
+    --fg-2:      #C2C6D0;
+    --fg-muted:  #7A8090;
+    --fg-dim:    #4F5562;
+    --fg-ghost:  #2E323D;
 
-    /* ── Accent ── */
-    --accent: #20a0e0;
-    --accent-2: #1070c0;
-    --accent-bg: rgba(120, 144, 224, 0.06);
-    --accent-bg-h: rgba(120, 144, 224, 0.12);
-    --accent-bg-sel: rgba(31, 31, 143, 0.2);
-    --accent-bg-act: rgba(31, 31, 143, 0.15);
-    --grad: linear-gradient(135deg, #1070c0 0%, #20a0e0 100%);
-    --grad-name: linear-gradient(135deg, #fff 0%, #20a0e0 100%);
+    /* ── Borders ──────────────────────────────────────────── */
+    --border:        rgba(255,255,255,0.06);
+    --border-m:      rgba(255,255,255,0.10);
+    --border-strong: rgba(255,255,255,0.18);
+    --border-accent: rgba(61,139,255,0.45);
 
-    /* ── Semantic ── */
-    --live: #ff4d4d;
-    --live-bg: rgba(255, 77, 77, 0.15);
-    --live-border: rgba(255, 77, 77, 0.3);
-    --win: #00c853;
-    --win-bg: rgba(0, 200, 83, 0.15);
-    --warn: #ffaa00;
-    --warn-bg: rgba(255, 170, 0, 0.08);
-    --warn-border: rgba(255, 170, 0, 0.22);
-    --gold: #ffd700;
+    /* ── Accent — electric blue ───────────────────────────── */
+    --accent:        #3D8BFF;
+    --accent-ink:    #FFFFFF;            /* text on accent */
+    --accent-2:      #0A6BE6;            /* pressed */
+    --accent-bg:     rgba(61,139,255,0.10);
+    --accent-bg-h:   rgba(61,139,255,0.16);
+    --accent-bg-sel: rgba(61,139,255,0.18);
+    --accent-bg-act: rgba(61,139,255,0.22);
+    --accent-soft:   rgba(61,139,255,0.04);
+    --grad:          linear-gradient(135deg, #0A6BE6 0%, #3D8BFF 100%);
+    --grad-text:     #FFFFFF;            /* text color ON --grad buttons */
+    --grad-name:     linear-gradient(90deg, #F4F5F7 0%, #3D8BFF 100%);
+    --grad-hero:     linear-gradient(135deg, rgba(123,92,255,0.18), rgba(61,139,255,0.10));
 
-    /* ── Shadows ── */
-    --shadow: 0 8px 40px rgba(15, 15, 70, 0.6);
-    --shadow-card: none;
-    --shadow-sm: none;
+    /* ── Secondary — violet (predictions chrome) ──────────── */
+    --violet:      #7B5CFF;
+    --violet-bg:   rgba(123,92,255,0.10);
+    --violet-soft: rgba(123,92,255,0.14);
 
-    /* ── Skeleton ── */
-    --sk-from: #14143a;
-    --sk-mid: #1c1c4a;
+    /* ── Semantic ─────────────────────────────────────────── */
+    --live:        #3D8BFF;
+    --live-bg:     rgba(61,139,255,0.14);
+    --live-border: rgba(61,139,255,0.40);
+    --win:         #3D8BFF;
+    --win-bg:      rgba(61,139,255,0.12);
+    --loss:        #FF6B6B;
+    --loss-bg:     rgba(255,107,107,0.10);
+    --warn:        #FFB23D;
+    --warn-bg:     rgba(255,178,61,0.10);
+    --warn-border: rgba(255,178,61,0.30);
+    --gold:        #3D8BFF;
+    --silver:      #C9CFDB;
+    --bronze:      #E89A5B;
 
-    /* ── Body aliases ── */
+    /* ── Radii ────────────────────────────────────────────── */
+    --r-1:    6px;
+    --r-2:    10px;
+    --r-3:    14px;
+    --r-4:    20px;
+    --r-5:    28px;
+    --r-pill: 999px;
+
+    /* ── Shadows ──────────────────────────────────────────── */
+    --shadow:       0 8px 40px rgba(0,0,0,0.45);
+    --shadow-card:  0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 24px rgba(0,0,0,0.35);
+    --shadow-sm:    0 1px 2px rgba(0,0,0,0.30);
+    --shadow-press: 0 0 0 1px rgba(61,139,255,0.60), 0 0 0 4px rgba(61,139,255,0.18), 0 6px 24px rgba(61,139,255,0.25);
+    --shadow-win:   0 0 0 1px rgba(61,139,255,0.50), 0 8px 40px rgba(61,139,255,0.20);
+    --shadow-live:  0 0 0 1px rgba(61,139,255,0.50), 0 6px 24px rgba(61,139,255,0.20);
+    --shadow-fab:   0 8px 24px rgba(61,139,255,0.35), 0 0 0 1px rgba(61,139,255,0.40) inset;
+
+    /* ── Skeleton ─────────────────────────────────────────── */
+    --sk-from: #13161F;
+    --sk-mid:  #1A1E2A;
+
+    /* ── Type scale ───────────────────────────────────────── */
+    --font-display: 'Geist', var(--font-inter), system-ui, sans-serif;
+    --font-body:    var(--font-inter), system-ui, sans-serif;
+    --font-mono:    'Geist Mono', 'JetBrains Mono', ui-monospace, monospace;
+
+    --t-display: 600 34px/38px var(--font-display);
+    --t-h1:      600 26px/30px var(--font-display);
+    --t-h2:      600 20px/24px var(--font-display);
+    --t-h3:      600 17px/22px var(--font-body);
+    --t-body:    500 15px/20px var(--font-body);
+    --t-caption: 500 13px/18px var(--font-body);
+    --t-micro:   600 11px/14px var(--font-body);
+    --t-num:     600 22px/26px var(--font-mono);
+    --t-code:    600 16px/20px var(--font-mono);
+
+    /* ── Body aliases ─────────────────────────────────────── */
     --background: var(--bg);
     --foreground: var(--fg);
   }
 
-  /* ── Light theme — all tokens derived from light-theme.css ── */
+  /* ── Light theme ────────────────────────────────────────── */
   [data-theme="light"] {
-    --bg: #f4f6fc;
-    --bg-elevated: #ffffff;
-    --bg-subtle: rgba(31, 31, 143, 0.04);
-    --bg-input: #ffffff;
+    --bg:          #F7F8FB;
+    --bg-elevated: #FFFFFF;
+    --bg-raised:   #FFFFFF;
+    --bg-hover:    #F0F2F7;
+    --bg-input:    #FFFFFF;
+    --bg-subtle:   rgba(10,12,16,0.025);
 
-    --fg: #0a0a1f;
-    --fg-2: #3a3f6e;
-    --fg-muted: #6e76a8;
-    --fg-dim: #8a92b8;
-    --fg-ghost: #c2c8de;
+    --glass-fill:     rgba(255,255,255,0.65);
+    --glass-border:   rgba(10,12,16,0.08);
+    --glass-hairline: rgba(10,12,16,0.06);
 
-    --border: rgba(31, 31, 143, 0.08);
-    --border-m: rgba(31, 31, 143, 0.15);
-    --border-accent: rgba(16, 112, 192, 0.30);
+    --fg:        #0A0C10;
+    --fg-2:      #3A3F50;
+    --fg-muted:  #6E7588;
+    --fg-dim:    #9AA1B4;
+    --fg-ghost:  #D2D6E0;
 
-    --accent: #1070c0;
-    --accent-2: #0a5090;
-    --accent-bg: rgba(31, 31, 143, 0.04);
-    --accent-bg-h: rgba(31, 31, 143, 0.10);
-    --accent-bg-sel: rgba(16, 112, 192, 0.08);
-    --accent-bg-act: rgba(16, 112, 192, 0.06);
-    --grad: linear-gradient(135deg, #0a5090 0%, #1070c0 100%);
-    --grad-name: linear-gradient(135deg, #1070c0 0%, #20a0e0 100%);
+    --border:        rgba(10,12,16,0.06);
+    --border-m:      rgba(10,12,16,0.10);
+    --border-strong: rgba(10,12,16,0.18);
+    --border-accent: rgba(61,139,255,0.35);
 
-    --live: #c4253b;
-    --live-bg: rgba(230, 57, 70, 0.10);
-    --live-border: rgba(230, 57, 70, 0.30);
-    --win: #007a30;
-    --win-bg: rgba(0, 160, 64, 0.10);
-    --warn: #b88800;
-    --warn-bg: rgba(214, 137, 0, 0.10);
-    --warn-border: rgba(214, 137, 0, 0.30);
-    --gold: #b88800;
+    --accent:        #2F7AE6;
+    --accent-ink:    #FFFFFF;
+    --accent-2:      #1A5FC4;
+    --accent-bg:     rgba(61,139,255,0.08);
+    --accent-bg-h:   rgba(61,139,255,0.14);
+    --accent-bg-sel: rgba(61,139,255,0.10);
+    --accent-bg-act: rgba(61,139,255,0.14);
+    --accent-soft:   rgba(61,139,255,0.04);
+    --grad:          linear-gradient(135deg, #1A5FC4 0%, #3D8BFF 100%);
+    --grad-text:     #FFFFFF;
+    --grad-name:     linear-gradient(90deg, #0A0C10 0%, #2F7AE6 100%);
+    --grad-hero:     linear-gradient(135deg, rgba(123,92,255,0.10), rgba(61,139,255,0.10));
 
-    --shadow: 0 8px 40px rgba(32, 48, 160, 0.15);
-    --shadow-card: 0 1px 3px rgba(15, 15, 70, 0.05), 0 6px 16px rgba(15, 15, 70, 0.04);
-    --shadow-sm: 0 1px 2px rgba(15, 15, 70, 0.04);
+    --violet:      #6244E0;
+    --violet-bg:   rgba(98,68,224,0.08);
+    --violet-soft: rgba(98,68,224,0.12);
 
-    --sk-from: #e8ebff;
-    --sk-mid: #d5d8f0;
+    --live:        #2F7AE6;
+    --live-bg:     rgba(61,139,255,0.08);
+    --live-border: rgba(61,139,255,0.35);
+    --win:         #2F7AE6;
+    --win-bg:      rgba(61,139,255,0.10);
+    --loss:        #C0392B;
+    --loss-bg:     rgba(192,57,43,0.08);
+    --warn:        #B07A00;
+    --warn-bg:     rgba(255,178,61,0.10);
+    --warn-border: rgba(176,122,0,0.30);
+    --gold:        #2F7AE6;
+    --silver:      #6B7280;
+    --bronze:      #92400E;
+
+    --shadow-card:  0 1px 3px rgba(15,15,40,0.05), 0 6px 16px rgba(15,15,40,0.04);
+    --shadow-sm:    0 1px 2px rgba(15,15,40,0.04);
+    --shadow-press: 0 0 0 1px rgba(61,139,255,0.50), 0 0 0 4px rgba(61,139,255,0.15), 0 6px 18px rgba(61,139,255,0.20);
+    --shadow-win:   0 4px 20px rgba(61,139,255,0.18);
+    --shadow-fab:   0 4px 16px rgba(61,139,255,0.25);
+
+    --sk-from: #E8EBF2;
+    --sk-mid:  #D5D9E5;
   }
 
-  html,
-  body {
-    max-width: 100vw;
-    overflow-x: hidden;
-  }
+  html, body { max-width: 100vw; overflow-x: hidden; }
 
   body {
     color: var(--foreground);
     background: var(--background);
-    font-family: var(--font-inter), sans-serif;
+    font-family: var(--font-geist, var(--font-inter), system-ui, sans-serif);
+    font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Center content at desktop widths */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
-  code {
-    background-color: var(--accent-bg);
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    font-family: var(--font-source-code-pro), monospace;
-    font-size: 0.875rem;
-    padding: 0.25rem 0.5rem calc(0.25rem + 2px);
+  /* Phone-width column — fills narrow screens, stays 430 px on desktop */
+  .app-frame {
+    width: 100%;
+    max-width: 430px;
+    min-height: 100dvh;
+    position: relative;
+    overflow-x: hidden;
   }
 
-  * {
-    box-sizing: border-box;
-    padding: 0;
-    margin: 0;
+  /* On desktop: subtle side borders so the app looks framed, not stretched */
+  @media (min-width: 480px) {
+    .app-frame {
+      border-left:  1px solid var(--border-m);
+      border-right: 1px solid var(--border-m);
+      box-shadow: 0 0 60px rgba(0,0,0,0.6);
+    }
   }
 
-  a {
-    color: inherit;
-    text-decoration: none;
-  }
+  /* Theme-conditional visibility for dual-variant icons */
+  .theme-light-only { display: none; }
+  [data-theme="light"] .theme-dark-only  { display: none; }
+  [data-theme="light"] .theme-light-only { display: inline; }
 
-  html {
-    color-scheme: dark;
-  }
+  /* Tabular numerals for number content */
+  .num, .tnum { font-variant-numeric: tabular-nums; font-family: var(--font-geist-mono, var(--font-mono)); }
 
-  html[data-theme="light"] {
-    color-scheme: light;
-  }
+  * { box-sizing: border-box; padding: 0; margin: 0; }
+  a { color: inherit; text-decoration: none; }
+
+  html              { color-scheme: dark; }
+  html[data-theme="light"] { color-scheme: light; }
+
+  /* Shared keyframes used across modules */
+  @keyframes pl-pulse   { 0%,100% { opacity:1 } 50% { opacity:.35 } }
+  @keyframes pl-shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
 }

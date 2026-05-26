@@ -4,26 +4,43 @@
   color: var(--fg);
   display: flex;
   flex-direction: column;
+  padding-bottom: 110px;
 }
 
+/* ── Glass header ────────────────────────────────────────── */
 .header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-filter);
+  -webkit-backdrop-filter: var(--glass-filter);
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .back {
-  background: none;
-  border: none;
-  color: var(--fg-muted);
-  font-size: 20px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border-m);
+  color: var(--fg);
+  font-size: 18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   cursor: pointer;
-  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.title { font-size: 17px; font-weight: 700; }
+.title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
 
 .loading {
   flex: 1;
@@ -35,7 +52,7 @@
 .spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid var(--border);
+  border: 2px solid var(--border);
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -43,13 +60,13 @@
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Top 3 podium ── */
+/* ── Top 3 podium ────────────────────────────────────────── */
 .podium {
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  gap: 12px;
-  padding: 28px 16px 20px;
+  gap: 10px;
+  padding: 24px 16px 20px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -69,19 +86,19 @@
   align-items: center;
   justify-content: center;
   font-size: 20px;
-  border: 2px solid transparent;
+  border: 2px solid var(--border-m);
 }
 
-.podiumFirst  .podiumAvatar { width: 60px; height: 60px; border-color: var(--gold); font-size: 24px; }
-.podiumSecond .podiumAvatar { border-color: #c0c0c0; }
-.podiumThird  .podiumAvatar { border-color: #cd7f32; }
+.podiumFirst  .podiumAvatar { width: 60px; height: 60px; border-color: var(--gold); font-size: 26px; box-shadow: 0 0 24px rgba(255,210,74,0.35); }
+.podiumSecond .podiumAvatar { border-color: var(--silver); }
+.podiumThird  .podiumAvatar { border-color: var(--bronze); }
 
 .podiumMedal { font-size: 20px; }
 .podiumFirst .podiumMedal { font-size: 28px; }
 
 .podiumName {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   text-align: center;
   max-width: 80px;
   overflow: hidden;
@@ -92,19 +109,29 @@
 .podiumPts {
   font-size: 11px;
   color: var(--fg-ghost);
+  font-family: var(--font-geist-mono, monospace);
+  font-weight: 600;
 }
 
-.podiumFirst .podiumPts { color: var(--gold); font-weight: 600; }
+.podiumFirst .podiumPts { color: var(--gold); }
 
-/* ── List ── */
-.list { display: flex; flex-direction: column; }
+/* ── List ────────────────────────────────────────────────── */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+}
 
 .row {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
+  padding: 12px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
 }
 
 .rowRank {
@@ -112,15 +139,17 @@
   text-align: center;
   font-size: 14px;
   font-weight: 700;
-  color: var(--fg-ghost);
+  color: var(--fg-muted);
   flex-shrink: 0;
+  font-family: var(--font-geist-mono, monospace);
 }
 
 .rowAvatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--bg-elevated);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border-m);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -131,19 +160,24 @@
 
 .rowAvatar img { width: 100%; height: 100%; object-fit: cover; }
 
-.rowName { flex: 1; font-size: 14px; font-weight: 500; }
+.rowName {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+}
 
 .rowMeta {
   font-size: 11px;
-  color: var(--fg-ghost);
+  color: var(--fg-dim);
   margin-top: 2px;
 }
 
 .rowPoints {
   font-size: 15px;
   font-weight: 700;
-  color: var(--gold);
+  color: var(--accent);
   white-space: nowrap;
+  font-family: var(--font-geist-mono, monospace);
 }
 
 .rowLeagues {
@@ -155,6 +189,6 @@
 .empty {
   text-align: center;
   padding: 60px 20px;
-  color: var(--fg-ghost);
+  color: var(--fg-dim);
   font-size: 14px;
 }

@@ -2,9 +2,7 @@
   min-height: 100vh;
   background: var(--bg);
   color: var(--fg);
-  padding: 24px 16px;
-  max-width: 800px;
-  margin: 0 auto;
+  padding: 24px 32px;
 }
 
 /* ── Auth gate ── */

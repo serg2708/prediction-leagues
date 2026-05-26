@@ -42,8 +42,8 @@ export const MOCK_PREDICTIONS: Record<string, Prediction[]> = {
 };
 
 export const MOCK_LEAGUES: League[] = [
-  { id: "1", name: "Alpha Squad",       sport: "football", status: "active", pool_usdc: 160, entry_fee_usdc: 20, creator_id: "0xAlex", invite_code: "ALPHA1", created_at: "", is_public: true, min_players: 2 },
-  { id: "2", name: "CS2 Degenerates",   sport: "cs2",      status: "active", pool_usdc: 50,  entry_fee_usdc: 10, creator_id: "0xYou",  invite_code: "CS2DG2", created_at: "", is_public: true, min_players: 2 },
-  { id: "3", name: "Hoops Gang",        sport: "nba",      status: "active", pool_usdc: 200, entry_fee_usdc: 40, creator_id: "0xMax",  invite_code: "HOOPS3", created_at: "", is_public: true, min_players: 2 },
-  { id: "4", name: "Work Friends",      sport: "football", status: "active", pool_usdc: 80,  entry_fee_usdc: 20, creator_id: "0xYou",  invite_code: "WORK44", created_at: "", is_public: false, min_players: 3 },
+  { id: "1", name: "Alpha Squad",       sport: "football", status: "active", pool_usdc: 160, entry_fee_usdc: 20, creator_id: "0xAlex", invite_code: "ALPHA1", created_at: "", ends_at: "", is_public: true, min_players: 2 },
+  { id: "2", name: "CS2 Degenerates",   sport: "cs2",      status: "active", pool_usdc: 50,  entry_fee_usdc: 10, creator_id: "0xYou",  invite_code: "CS2DG2", created_at: "", ends_at: "", is_public: true, min_players: 2 },
+  { id: "3", name: "Hoops Gang",        sport: "nba",      status: "active", pool_usdc: 200, entry_fee_usdc: 40, creator_id: "0xMax",  invite_code: "HOOPS3", created_at: "", ends_at: "", is_public: true, min_players: 2 },
+  { id: "4", name: "Work Friends",      sport: "football", status: "active", pool_usdc: 80,  entry_fee_usdc: 20, creator_id: "0xYou",  invite_code: "WORK44", created_at: "", ends_at: "", is_public: false, min_players: 3 },
 ];

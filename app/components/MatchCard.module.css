@@ -1,0 +1,154 @@
+/* Match card — prediction card with outcome buttons */
+
+.card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-4);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+.cardLive {
+  border-color: var(--live-border);
+  box-shadow: var(--shadow-live);
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* ── Time pill ───────────────────────────────────────────── */
+.pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border-m);
+  color: var(--fg-muted);
+  font-size: 11px; font-weight: 600; letter-spacing: 0.2px;
+}
+.pillLive {
+  background: var(--live-bg);
+  border-color: var(--live-border);
+  color: var(--live);
+  font-weight: 700;
+}
+.pillLive::before {
+  content: "";
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--live);
+  animation: pl-pulse 2.4s ease-in-out infinite;
+}
+.pillFinished {
+  color: var(--fg-dim);
+}
+
+/* ── Score ───────────────────────────────────────────────── */
+.score {
+  font-family: var(--font-geist-mono, monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 14px; font-weight: 700;
+  color: var(--fg-2);
+  padding: 3px 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border-m);
+  border-radius: var(--r-2);
+}
+.scoreLive { background: var(--live-bg); border-color: var(--live-border); }
+
+/* ── Team row ────────────────────────────────────────────── */
+.teamRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.teamBlock {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.teamBlockRight { flex-direction: row-reverse; }
+
+.teamCrest {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border-m);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+  color: var(--fg-2);
+  flex-shrink: 0;
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 0.5px;
+}
+
+.teamName {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  color: var(--fg);
+}
+
+.vsLabel {
+  color: var(--fg-dim);
+  font-size: 11px; font-weight: 600;
+  flex-shrink: 0;
+  padding: 0 2px;
+}
+
+/* ── Outcome buttons ─────────────────────────────────────── */
+.outcomes { display: flex; gap: 8px; }
+
+.outcome {
+  flex: 1;
+  padding: 11px 6px 9px;
+  border-radius: var(--r-2);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border-m);
+  color: var(--fg-2);
+  cursor: pointer;
+  display: flex; flex-direction: column; align-items: center;
+  font-size: 13px; font-weight: 600;
+  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.outcome:hover:not(:disabled) {
+  background: rgba(255,255,255,0.07);
+  border-color: var(--border-strong);
+  color: var(--fg);
+}
+.outcome:active:not(:disabled) { transform: scale(0.97); }
+.outcome:disabled { cursor: default; }
+
+.outcomeSelected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: var(--shadow-press);
+}
+
+.outcomeCorrect {
+  background: var(--win-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.outcomeWrong {
+  background: var(--loss-bg);
+  border-color: rgba(255,107,107,0.40);
+  color: var(--loss);
+  text-decoration: line-through;
+}

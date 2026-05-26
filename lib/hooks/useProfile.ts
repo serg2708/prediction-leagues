@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useAccount } from "wagmi";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import { supabase } from "@/lib/supabase";
+import { useAccount } from "wagmi";
+
+import { upsertProfileAction } from "@/app/actions/upsert-profile";
 import type { Profile } from "@/lib/types";
 
 const USE_MOCK = !process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -28,20 +29,12 @@ export function useProfile() {
 
     async function upsert() {
       const displayName =
-        context?.user?.displayName ?? context?.user?.username ?? profileId!.slice(0, 8);
+        context?.user?.displayName ?? context?.user?.username ?? profileId?.slice(0, 8) ?? "";
       const avatarUrl = context?.user?.pfpUrl ?? undefined;
       const fid = context?.user?.fid ?? undefined;
 
-      const { data } = await supabase
-        .from("profiles")
-        .upsert(
-          { id: profileId, display_name: displayName, avatar_url: avatarUrl, fid },
-          { onConflict: "id" }
-        )
-        .select()
-        .single();
-
-      if (data) setProfile(data as Profile);
+      await upsertProfileAction({ id: profileId as string, displayName, avatarUrl, fid });
+      setProfile({ id: profileId as string, display_name: displayName, avatar_url: avatarUrl });
     }
 
     upsert();

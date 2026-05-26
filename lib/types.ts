@@ -20,6 +20,8 @@ export interface League {
   creator_id: string;
   invite_code: string;
   created_at: string;
+  ends_at: string | null;
+  competition_id?: string;
   is_public: boolean;
   min_players: number;
   members?: LeagueMember[];

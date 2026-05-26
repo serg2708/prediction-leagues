@@ -1,0 +1,149 @@
+/* ── Glass bottom nav ───────────────────────────────────── */
+.nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  z-index: 50;
+  padding: 10px 16px calc(env(safe-area-inset-bottom, 0px) + 14px);
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-filter);
+  -webkit-backdrop-filter: var(--glass-filter);
+  border-top: 1px solid var(--glass-hairline);
+  box-shadow: var(--glass-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  text-decoration: none;
+  color: var(--fg-muted);
+  transition: color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 6px 0;
+}
+
+.tab:hover { color: var(--fg-2); }
+
+.tabActive {
+  color: var(--accent);
+}
+
+.icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* ── Create FAB ─────────────────────────────────────────── */
+.createIcon {
+  font-size: 20px;
+  line-height: 1;
+  width: 44px;
+  height: 44px;
+  background: var(--grad);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--grad-text);
+  box-shadow: var(--shadow-fab);
+  transition: transform 0.12s ease, box-shadow 0.15s;
+}
+
+.tab:active .createIcon { transform: scale(0.94); }
+.tab:hover .createIcon  { filter: brightness(1.05); }
+
+.label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+/* ── Me tab ─────────────────────────────────────────────── */
+.meWrap {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.meIconWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.meDot {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+}
+
+/* ── Connect menu (popover above nav) ───────────────────── */
+.connectMenu {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  right: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-m);
+  border-radius: 16px;
+  padding: 10px;
+  min-width: 210px;
+  box-shadow: var(--shadow);
+  z-index: 100;
+}
+
+.connectTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+  padding: 0 6px;
+}
+
+.connectItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+  margin-bottom: 4px;
+}
+
+.connectItem:last-child { margin-bottom: 0; }
+.connectItem:hover { background: var(--accent-bg); }
+
+.connectIcon {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  object-fit: contain;
+}

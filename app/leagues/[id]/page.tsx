@@ -6,21 +6,16 @@ import { useLeague } from "@/lib/hooks/useLeague";
 import { usePredictions } from "@/lib/hooks/usePredictions";
 import { useProfile } from "@/lib/hooks/useProfile";
 import type { Match, LeagueMember, PredictionOutcome } from "@/lib/types";
+import { ChevronLeft, ChevronRight, Check, XMark, Clock, SportIcon, Medal } from "@/app/components/Icons";
+import matchStyles from "@/app/components/MatchCard.module.css";
 import styles from "./page.module.css";
 
-const SPORT_EMOJI: Record<string, string> = {
-  football: "⚽",
-  cs2: "🎮",
-  nba: "🏀",
-};
 
-const OUTCOME_LABEL: Record<PredictionOutcome, string> = {
-  home:  "Home",
-  draw:  "Draw",
-  away:  "Away",
-  team1: "Team 1",
-  team2: "Team 2",
-};
+function outcomeLabel(outcome: PredictionOutcome, match: Match): string {
+  if (outcome === "home"  || outcome === "team1") return match.team_home;
+  if (outcome === "away"  || outcome === "team2") return match.team_away;
+  return "Draw";
+}
 
 function sportOutcomes(sport: string): PredictionOutcome[] {
   if (sport === "cs2")      return ["team1", "team2"];
@@ -51,79 +46,90 @@ function MatchCard({
 }: {
   match: Match;
   myPrediction?: PredictionOutcome;
-  onPredict: (matchId: string, outcome: PredictionOutcome) => void;
+  onPredict: (matchId: string, outcome: PredictionOutcome, matchStatus: string) => void;
   locked?: boolean;
 }) {
 
   const locked = match.status !== "upcoming" || !!lockedByParent;
 
   return (
-    <div className={styles.matchCard}>
-      <div className={styles.matchHeader}>
+    <div className={`${matchStyles.card} ${match.status === "live" ? matchStyles.cardLive : ""}`}>
+      <div className={matchStyles.header}>
         <span
-          className={
-            match.status === "live"
-              ? styles.matchTimeLive
-              : match.status === "finished"
-              ? styles.matchTimeFinished
-              : styles.matchTime
-          }
+          className={[
+            matchStyles.pill,
+            match.status === "live"     ? matchStyles.pillLive     : "",
+            match.status === "finished" ? matchStyles.pillFinished  : "",
+          ].filter(Boolean).join(" ")}
         >
-          {match.status === "live" && <span className={styles.liveDot} />}
           {formatMatchTime(match.starts_at, match.status)}
         </span>
         {match.status === "finished" && match.score_home !== undefined && (
-          <span className={styles.score}>
+          <span className={`${matchStyles.score} num`}>
+            {match.score_home} – {match.score_away}
+          </span>
+        )}
+        {match.status === "live" && match.score_home !== undefined && (
+          <span className={`${matchStyles.score} ${matchStyles.scoreLive} num`}>
             {match.score_home} – {match.score_away}
           </span>
         )}
       </div>
 
-      <div className={styles.teams}>
-        <span className={styles.team}>{match.team_home}</span>
-        <span className={styles.vs}>vs</span>
-        <span className={styles.team}>{match.team_away}</span>
+      <div className={matchStyles.teamRow}>
+        <div className={matchStyles.teamBlock}>
+          <div className={matchStyles.teamCrest}>{match.team_home.slice(0, 3).toUpperCase()}</div>
+          <span className={matchStyles.teamName}>{match.team_home}</span>
+        </div>
+        <span className={matchStyles.vsLabel}>VS</span>
+        <div className={`${matchStyles.teamBlock} ${matchStyles.teamBlockRight}`}>
+          <span className={matchStyles.teamName}>{match.team_away}</span>
+          <div className={matchStyles.teamCrest}>{match.team_away.slice(0, 3).toUpperCase()}</div>
+        </div>
       </div>
 
-      <div className={styles.outcomes}>
+      <div className={matchStyles.outcomes}>
         {sportOutcomes(match.sport).map((outcome) => {
-            const label = OUTCOME_LABEL[outcome];
-            const isSelected = myPrediction === outcome;
-            const isCorrect = match.result === outcome && locked;
-            const isWrong = isSelected && locked && match.result !== outcome;
-            return (
-              <button
-                key={outcome}
-                type="button"
-                disabled={locked}
-                onClick={() => onPredict(match.id, outcome)}
-                className={[
-                  styles.outcomeBtn,
-                  isSelected ? styles.outcomeBtnSelected : "",
-                  isCorrect ? styles.outcomeBtnCorrect : "",
-                  isWrong ? styles.outcomeBtnWrong : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-              >
-                {label}
-                {isCorrect && isSelected && " +10"}
-              </button>
-            );
-          })}
+          const label = outcomeLabel(outcome, match);
+          const isSelected = myPrediction === outcome;
+          const isCorrect  = match.result === outcome && locked;
+          const isWrong    = isSelected && locked && match.result !== outcome;
+          return (
+            <button
+              key={outcome}
+              type="button"
+              disabled={locked}
+              onClick={() => onPredict(match.id, outcome, match.status)}
+              className={[
+                matchStyles.outcome,
+                isSelected ? matchStyles.outcomeSelected : "",
+                isCorrect  ? matchStyles.outcomeCorrect  : "",
+                isWrong    ? matchStyles.outcomeWrong    : "",
+              ].filter(Boolean).join(" ")}
+            >
+              {label}
+              {isCorrect && isSelected && " +10"}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function MemberRow({ member, index }: { member: LeagueMember; index: number }) {
-  const medals = ["🥇", "🥈", "🥉"];
+function MemberRow({ member, index, isMe }: { member: LeagueMember; index: number; isMe?: boolean }) {
+  const name = member.profile?.display_name ?? member.profile_id.slice(0, 8);
+  const initials = name.slice(0, 2).toUpperCase();
   return (
-    <div className={styles.memberRow}>
-      <span className={styles.memberRank}>{index < 3 ? medals[index] : `#${index + 1}`}</span>
-      <span className={styles.memberName}>
-        {member.profile?.display_name ?? member.profile_id.slice(0, 8)}
+    <div className={`${styles.memberRow} ${isMe ? styles.memberRowMe : ""}`}>
+      <span className={styles.memberRank}>
+        {index < 3 ? <Medal rank={(index + 1) as 1 | 2 | 3} size={20} /> : `#${index + 1}`}
       </span>
+      <div className={`${styles.memberAvatar} ${isMe ? styles.memberAvatarMe : ""}`}>{initials}</div>
+      <div className={styles.memberNameBlock}>
+        <span className={styles.memberName}>{name}</span>
+        {isMe && <span className={styles.memberYouBadge}>You</span>}
+      </div>
       <span className={styles.memberPoints}>{member.points} pts</span>
     </div>
   );
@@ -137,13 +143,23 @@ export default function LeaguePage() {
   const { league, matches, members, loading } = useLeague(id);
   const { predictions, predict } = usePredictions(id, profileId ?? undefined);
   const [activeTab, setActiveTab] = useState<"matches" | "standings" | "history">("matches");
+  const [copied, setCopied] = useState(false);
 
-  const share = useCallback(() => {
+  const share = useCallback(async () => {
     if (!league) return;
-    const url  = `${process.env.NEXT_PUBLIC_URL ?? "http://localhost:3000"}/leagues/join?code=${league.invite_code}`;
-    const text = `Join my league "${league.name}" on Prediction Leagues! 🏆`;
-    const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(text)}&embeds[]=${encodeURIComponent(url)}`;
-    window.open(warpcastUrl, "_blank", "noopener,noreferrer");
+    const url  = `${process.env.NEXT_PUBLIC_URL ?? "https://prediction-leagues.vercel.app"}/leagues/join?code=${league.invite_code}`;
+    const text = `Join my league "${league.name}" on Prediction Leagues!`;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: league.name, text, url });
+        return;
+      } catch {}
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
   }, [league]);
 
   useEffect(() => {
@@ -162,7 +178,7 @@ export default function LeaguePage() {
     return (
       <div className={styles.notFound}>
         <p>League not found</p>
-        <button type="button" onClick={() => router.back()}>← Back</button>
+        <button type="button" onClick={() => router.back()}><ChevronLeft size={16} /> Back</button>
       </div>
     );
   }
@@ -174,10 +190,10 @@ export default function LeaguePage() {
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <button type="button" className={styles.back} onClick={() => router.back()}>←</button>
+        <button type="button" className={styles.back} onClick={() => router.back()}><ChevronLeft /></button>
         <div className={styles.headerInfo}>
           <h1 className={styles.leagueName}>
-            {SPORT_EMOJI[league.sport]} {league.name}
+            <SportIcon sport={league.sport} size={18} /> {league.name}
           </h1>
           <p className={styles.leagueSub}>
             {members.length} players · ${league.pool_usdc} USDC pool
@@ -185,37 +201,52 @@ export default function LeaguePage() {
         </div>
         <div className={styles.inviteCode} style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <div>
-            <span className={styles.codeLabel}>Code</span>
+            <span className={styles.codeLabel}>Code </span>
             <span className={styles.code}>{league.invite_code}</span>
           </div>
           <button type="button" className={styles.shareBtn} onClick={share} title="Share league">
-            Share
+            {copied ? "Copied!" : "Share"}
           </button>
         </div>
       </header>
 
       {me && (
-        <div className={styles.myStats}>
-          <div className={styles.myStat}>
-            <p className={styles.myStatValue}>#{me.rank}</p>
+        <div className={styles.statsCard}>
+          <div className={styles.statCol}>
+            <p className={styles.myStatLabel}>Pool</p>
+            <div className={styles.statValRow}>
+              <span className={`${styles.myStatValue} ${styles.statValAccent} num`}>{league.pool_usdc}</span>
+              <span className={styles.statUnit}>USDC</span>
+            </div>
+          </div>
+          <div className={styles.myStatDivider} />
+          <div className={styles.statCol}>
             <p className={styles.myStatLabel}>Your rank</p>
+            <div className={styles.statValRow}>
+              {me.rank === 1 && (
+                <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={styles.statValGold} style={{ flexShrink: 0 }}>
+                  <path d="M7 4h10v4a5 5 0 11-10 0V4zM7 6H3v2a3 3 0 003 3M17 6h4v2a3 3 0 01-3 3M9 17h6M12 12v5M10 21h4"/>
+                </svg>
+              )}
+              <span className={`${styles.myStatValue} ${me.rank === 1 ? styles.statValGold : ""} num`}>
+                #{me.rank}
+              </span>
+              <span className={styles.statUnit}>of {members.length}</span>
+            </div>
           </div>
           <div className={styles.myStatDivider} />
-          <div className={styles.myStat}>
-            <p className={styles.myStatValue}>{me.points}</p>
-            <p className={styles.myStatLabel}>Your points</p>
-          </div>
-          <div className={styles.myStatDivider} />
-          <div className={styles.myStat}>
-            <p className={styles.myStatValue}>${league.pool_usdc}</p>
-            <p className={styles.myStatLabel}>Prize pool</p>
+          <div className={`${styles.statCol} ${styles.statColFlex}`}>
+            <p className={styles.myStatLabel}>Points</p>
+            <div className={styles.statValRow}>
+              <span className={`${styles.myStatValue} num`}>{me.points}</span>
+            </div>
           </div>
         </div>
       )}
 
       {waitingForPlayers && (
         <div className={styles.waitingBanner}>
-          <span>⏳</span>
+          <Clock size={16} />
           <span>Waiting for {minPlayers - members.length} more player{minPlayers - members.length !== 1 ? "s" : ""} — predictions locked until {minPlayers} have joined</span>
         </div>
       )}
@@ -244,6 +275,18 @@ export default function LeaguePage() {
         </button>
       </div>
 
+      {matches.some((m) => m.status !== "finished") && !waitingForPlayers && (
+        <div className={styles.floatingCta}>
+          <button
+            type="button"
+            className={styles.predictBtn}
+            onClick={() => setActiveTab("matches")}
+          >
+            Make Predictions <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
+
       <div className={styles.content}>
         {activeTab === "matches" && (
           matches.filter((m) => m.status !== "finished").length > 0 ? (
@@ -266,7 +309,7 @@ export default function LeaguePage() {
         {activeTab === "standings" && (
           <div className={styles.standings}>
             {members.map((m, i) => (
-              <MemberRow key={m.profile_id} member={m} index={i} />
+              <MemberRow key={m.profile_id} member={m} index={i} isMe={!!profileId && m.profile_id === profileId} />
             ))}
           </div>
         )}
@@ -286,15 +329,15 @@ export default function LeaguePage() {
                       !pred ? styles.historyNoPred :
                       correct ? styles.historyCorrect : styles.historyWrong
                     }`}>
-                      {!pred ? "—" : correct ? "✓" : "✗"}
+                      {!pred ? "—" : correct ? <Check /> : <XMark />}
                     </div>
                     <div className={styles.historyInfo}>
                       <p className={styles.historyMatch}>
                         {match.team_home} vs {match.team_away}
                       </p>
                       <p className={styles.historyMeta}>
-                        Result: <strong>{match.result ?? "?"}</strong>
-                        {pred && <> · Your pick: <strong>{pred.outcome}</strong></>}
+                        Result: <strong>{match.result ? outcomeLabel(match.result, match) : "?"}</strong>
+                        {pred && <> · Your pick: <strong>{outcomeLabel(pred.outcome, match)}</strong></>}
                         {match.score_home != null && (
                           <> · {match.score_home}–{match.score_away}</>
                         )}

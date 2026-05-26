@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Source_Code_Pro } from "next/font/google";
+import { Geist, Geist_Mono, Inter } from "next/font/google";
 import Script from "next/script";
 import { minikitConfig } from "@/minikit.config";
 import { ClientDynamicWrapper } from "./ClientDynamicWrapper";
@@ -26,13 +26,18 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const inter = Inter({
-  variable: "--font-inter",
+const geist = Geist({
+  variable: "--font-geist",
   subsets: ["latin"],
 });
 
-const sourceCodePro = Source_Code_Pro({
-  variable: "--font-source-code-pro",
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
@@ -43,11 +48,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${sourceCodePro.variable}`}>
+      <body className={`${geist.variable} ${geistMono.variable} ${inter.variable}`}>
         <Script id="theme-init" strategy="beforeInteractive">
           {`(function(){var t=localStorage.getItem('theme');if(t==='light')document.documentElement.setAttribute('data-theme','light')})()`}
         </Script>
-        <ClientDynamicWrapper>{children}</ClientDynamicWrapper>
+        <div className="app-frame">
+          <ClientDynamicWrapper>{children}</ClientDynamicWrapper>
+        </div>
       </body>
     </html>
   );

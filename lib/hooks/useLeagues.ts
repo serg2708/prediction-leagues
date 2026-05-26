@@ -62,7 +62,8 @@ export function useLeagues(profileId: string | undefined) {
             points,
             leagues (
               id, name, sport, status, pool_usdc, entry_fee_usdc,
-              creator_id, invite_code, created_at,
+              creator_id, invite_code, created_at, ends_at,
+              is_public, min_players,
               league_members ( profile_id ),
               matches ( id, team_home, team_away, sport, starts_at, status, score_home, score_away, result )
             )

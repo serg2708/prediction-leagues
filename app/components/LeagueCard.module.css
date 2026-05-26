@@ -1,0 +1,212 @@
+/* League card — home feed */
+
+.card {
+  position: relative;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-4);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.card:active { transform: scale(0.995); }
+
+.cardWon {
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-win);
+}
+.cardWon::after {
+  content: "";
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(120% 60% at 100% 0%, var(--accent-bg-h), transparent 60%);
+}
+
+.cardFinished { opacity: 0.75; }
+
+/* ── Top row ─────────────────────────────────────────────── */
+.top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  position: relative;
+}
+
+.sportTile {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  display: grid; place-items: center;
+  font-size: 22px;
+  background: var(--violet-soft);
+  border: 1px solid rgba(123,92,255,0.35);
+}
+.sportTile.football { background: var(--violet-soft);  border-color: rgba(123,92,255,0.35); }
+.sportTile.nba      { background: rgba(255,178,61,0.18);  border-color: rgba(255,178,61,0.32); }
+.sportTile.cs2      { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.16); }
+
+.info { flex: 1; min-width: 0; }
+.nameRow { display: flex; align-items: center; gap: 6px; }
+.name {
+  font: var(--t-h3);
+  letter-spacing: -0.2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.finishedBadge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-1);
+  padding: 2px 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Match status strip ──────────────────────────────────── */
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-top: 6px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--glass-hairline);
+  border-radius: var(--r-2);
+}
+.statusLive {
+  background: var(--live-bg);
+  border-color: var(--live-border);
+}
+.statusLive .statusLabel { color: var(--live); }
+.statusLabel {
+  font: var(--t-caption); font-weight: 600;
+  flex-shrink: 0;
+  color: var(--fg-2);
+}
+.statusText {
+  font: var(--t-caption);
+  color: var(--fg-muted);
+  flex: 1; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.liveDot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--live);
+  flex-shrink: 0;
+  animation: pl-pulse 2.4s ease-in-out infinite;
+}
+
+/* ── Pool column ─────────────────────────────────────────── */
+.pool { text-align: right; flex-shrink: 0; }
+.poolAmount {
+  font-family: var(--font-geist-mono, monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 18px; font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--accent);
+}
+.cardWon .poolAmount { color: var(--accent); }
+.poolLabel {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fg-dim);
+  margin-top: 2px;
+}
+
+/* ── Bottom row ──────────────────────────────────────────── */
+.bottom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.rankBlock {
+  display: flex; align-items: center; gap: 3px;
+}
+.rankTrophy {
+  color: var(--gold);
+  flex-shrink: 0;
+  margin-right: 1px;
+}
+.rank {
+  font-size: 20px; font-weight: 700;
+  color: var(--fg-2);
+  font-family: var(--font-geist-mono, monospace);
+  font-variant-numeric: tabular-nums;
+}
+.rankFirst { color: var(--gold); }
+.rankSub, .endsAt {
+  font-size: 11px;
+  color: var(--fg-dim);
+}
+
+.pointsBlock {
+  display: flex; align-items: baseline; gap: 3px;
+  margin-right: auto;
+}
+.pointsValue {
+  font-size: 16px; font-weight: 700;
+  color: var(--fg-2);
+  font-family: var(--font-geist-mono, monospace);
+  font-variant-numeric: tabular-nums;
+}
+.pointsLabel { font-size: 11px; color: var(--fg-dim); }
+
+.divider { width: 1px; height: 18px; background: var(--border); }
+
+/* Winner pill */
+.wonPill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 4px 10px 4px 6px;
+  background: var(--accent-bg);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--r-pill);
+  font: var(--t-caption); font-weight: 700;
+  color: var(--accent);
+}
+
+.cta {
+  padding: 8px 14px;
+  border-radius: var(--r-2);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border-m);
+  color: var(--fg);
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+  margin-left: auto;
+}
+.cta:hover { background: rgba(255,255,255,0.10); }
+
+.ctaJoin {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.ctaJoin:hover { background: var(--accent); filter: brightness(1.05); }
+
+/* ── Skeleton ────────────────────────────────────────────── */
+.skeleton {
+  height: 112px;
+  border-radius: var(--r-4);
+  background: linear-gradient(90deg, var(--sk-from) 25%, var(--sk-mid) 50%, var(--sk-from) 75%);
+  background-size: 200% 100%;
+  animation: pl-shimmer 1.4s ease infinite;
+}

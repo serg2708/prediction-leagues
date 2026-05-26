@@ -16,27 +16,7 @@ const supabase = createClient(
 
 const ORIGIN = process.env.NEXT_PUBLIC_URL ?? "http://localhost:3000";
 
-type League = { id: string; sport: string; competition: string | null };
-
-// Default competition per sport — for leagues that have no existing matches yet
-const DEFAULT_COMPETITION: Record<string, string> = {
-  football: "PL",
-  cs2:      "csgo",
-  nba:      "nba",
-};
-
-async function getCompetitionForLeague(leagueId: string, sport: string): Promise<string> {
-  // Use the competition stored on the first existing match, otherwise use default
-  const { data } = await supabase
-    .from("matches")
-    .select("competition")
-    .eq("league_id", leagueId)
-    .not("competition", "is", null)
-    .limit(1)
-    .single();
-
-  return (data?.competition as string | null) ?? DEFAULT_COMPETITION[sport] ?? "PL";
-}
+type League = { id: string; sport: string; competition_id: string | null };
 
 export async function GET(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
@@ -44,11 +24,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Get all non-finished leagues
+  // Get all active leagues that haven't expired yet
   const { data: leagues, error } = await supabase
     .from("leagues")
-    .select("id, sport")
-    .neq("status", "finished");
+    .select("id, sport, competition_id")
+    .neq("status", "finished")
+    .or(`ends_at.is.null,ends_at.gt.${new Date().toISOString()}`);
 
   if (error || !leagues?.length) {
     return NextResponse.json({ ok: true, synced: 0 });
@@ -57,8 +38,6 @@ export async function GET(req: NextRequest) {
   const results: { leagueId: string; inserted: number; error?: string }[] = [];
 
   for (const league of leagues as League[]) {
-    const competition = await getCompetitionForLeague(league.id, league.sport);
-
     const res = await fetch(`${ORIGIN}/api/admin/sync-matches`, {
       method: "POST",
       headers: {
@@ -68,7 +47,7 @@ export async function GET(req: NextRequest) {
       body: JSON.stringify({
         league_id:   league.id,
         sport:       league.sport,
-        competition,
+        competition: league.competition_id,
       }),
     });
 

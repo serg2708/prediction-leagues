@@ -6,9 +6,13 @@ import {
   TransactionButton,
   TransactionStatus,
   TransactionStatusAction,
+  type LifecycleStatus,
 } from "@coinbase/onchainkit/transaction";
-import type { LifecycleStatus } from "@coinbase/onchainkit/transaction";
 import { useRouter, useSearchParams } from "next/navigation";
+import { joinLeagueAction } from "@/app/actions/join-league";
+import { BottomNav } from "@/app/components/BottomNav";
+import { ThemeToggle } from "@/app/components/ThemeToggle";
+import { ChevronLeft, ChevronRight, SportIcon } from "@/app/components/Icons";
 import { buildDepositCalls } from "@/lib/contracts";
 import { useProfile } from "@/lib/hooks/useProfile";
 import { MOCK_LEAGUES } from "@/lib/mock";
@@ -17,7 +21,6 @@ import type { League } from "@/lib/types";
 import styles from "./page.module.css";
 
 const USE_MOCK = !process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SPORT_EMOJI: Record<string, string> = { football: "⚽", cs2: "🎮", nba: "🏀" };
 
 type LookupState = "idle" | "searching" | "found" | "not_found" | "already_member";
 
@@ -90,20 +93,16 @@ function JoinLeagueContent() {
       const txHash = status.statusData.transactionReceipts[0]?.transactionHash;
 
       if (!USE_MOCK && profileId && txHash) {
-        await Promise.all([
-          supabase.from("deposits").insert({
-            league_id: league.id,
-            profile_id: profileId,
-            amount_usdc: league.entry_fee_usdc,
-            tx_hash: txHash,
-            confirmed: true,
-          }),
-          supabase.from("league_members").insert({
-            league_id: league.id,
-            profile_id: profileId,
-            paid: true,
-          }),
-        ]);
+        const result = await joinLeagueAction({
+          leagueId: league.id,
+          entryFeeUsdc: league.entry_fee_usdc,
+          currentPoolUsdc: league.pool_usdc,
+          profileId,
+          txHash,
+        });
+        if (!result.ok) {
+          console.error("joinLeagueAction failed:", result.error);
+        }
       }
 
       router.push(`/leagues/${league.id}`);
@@ -117,37 +116,28 @@ function JoinLeagueContent() {
     <div className={styles.container}>
       <header className={styles.header}>
         <button type="button" className={styles.back} onClick={() => router.back()}>
-          ←
+          <ChevronLeft />
         </button>
         <h1 className={styles.title}>Join League</h1>
+        <div style={{ marginLeft: "auto" }}><ThemeToggle /></div>
       </header>
 
       <div className={styles.body}>
         <p className={styles.hint}>Enter the invite code shared by the league creator</p>
 
-        <div className={styles.inputRow}>
-          <input
-            className={styles.codeInput}
-            type="text"
-            placeholder="e.g. ALPHA1"
-            maxLength={8}
-            value={code}
-            onChange={(e) => {
-              setCode(e.target.value.toUpperCase());
-              setLookupState("idle");
-              setLeague(null);
-            }}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-          />
-          <button
-            type="button"
-            className={`${styles.searchBtn} ${lookupState === "searching" ? styles.searchBtnLoading : ""}`}
-            onClick={() => handleSearch()}
-            disabled={lookupState === "searching" || code.trim().length < 4}
-          >
-            {lookupState === "searching" ? "…" : "Search"}
-          </button>
-        </div>
+        <input
+          className={styles.codeInput}
+          type="text"
+          placeholder="e.g. ALPHA1"
+          maxLength={8}
+          value={code}
+          onChange={(e) => {
+            setCode(e.target.value.toUpperCase());
+            setLookupState("idle");
+            setLeague(null);
+          }}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+        />
 
         {lookupState === "not_found" && (
           <p className={styles.errorMsg}>
@@ -165,7 +155,7 @@ function JoinLeagueContent() {
               className={styles.goBtn}
               onClick={() => router.push(`/leagues/${league.id}`)}
             >
-              Go to league →
+              Go to league <ChevronRight />
             </button>
           </div>
         )}
@@ -173,7 +163,7 @@ function JoinLeagueContent() {
         {lookupState === "found" && league && depositCalls.length > 0 && (
           <div className={styles.leagueCard}>
             <div className={styles.leagueTop}>
-              <span className={styles.sportEmoji}>{SPORT_EMOJI[league.sport]}</span>
+              <span className={styles.sportEmoji}><SportIcon sport={league.sport} size={22} /></span>
               <div>
                 <p className={styles.leagueName}>{league.name}</p>
                 <p className={styles.leagueMeta}>
@@ -183,8 +173,16 @@ function JoinLeagueContent() {
             </div>
 
             <div className={styles.feeRow}>
-              <span className={styles.feeLabel}>Entry fee</span>
+              <span className={styles.feeLabel}>Entry to pool</span>
               <span className={styles.feeValue}>${league.entry_fee_usdc} USDC</span>
+            </div>
+            <div className={styles.feeRow}>
+              <span className={styles.feeLabel}>Platform fee (5%)</span>
+              <span className={styles.feeNote}>+${(league.entry_fee_usdc * 0.05).toFixed(2)} USDC</span>
+            </div>
+            <div className={styles.feeRow}>
+              <span className={styles.feeLabel}>You pay</span>
+              <span className={styles.feeValue}>${(league.entry_fee_usdc * 1.05).toFixed(2)} USDC</span>
             </div>
 
             <div className={styles.txWrapper}>
@@ -206,6 +204,18 @@ function JoinLeagueContent() {
           </div>
         )}
       </div>
+
+      <div className={styles.footer}>
+        <button
+          type="button"
+          className={`${styles.searchBtn} ${lookupState === "searching" ? styles.searchBtnLoading : ""}`}
+          onClick={() => handleSearch()}
+          disabled={lookupState === "searching" || code.trim().length < 4}
+        >
+          {lookupState === "searching" ? "Searching…" : <>Search <ChevronRight /></>}
+        </button>
+      </div>
+      <BottomNav />
     </div>
   );
 }

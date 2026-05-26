@@ -10,7 +10,7 @@ const USDC_BY_CHAIN: Record<number, `0x${string}`> = {
 };
 
 const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 84532);
-export const USDC_ADDRESS  = USDC_BY_CHAIN[CHAIN_ID] ?? USDC_BY_CHAIN[84532];
+export const USDC_ADDRESS  = USDC_BY_CHAIN[CHAIN_ID] ?? (() => { throw new Error(`No USDC address for chain ${CHAIN_ID}`); })();
 export const POOL_ADDRESS  = (
   process.env.NEXT_PUBLIC_POOL_ADDRESS ?? "0x0000000000000000000000000000000000000000"
 ) as `0x${string}`;
@@ -63,6 +63,16 @@ export const PREDICTION_POOL_ABI = [
     stateMutability: "nonpayable",
   },
   {
+    name: "payoutMultiple",
+    type: "function" as const,
+    inputs: [
+      { name: "leagueId", type: "bytes32" },
+      { name: "winners",  type: "address[]" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
     name: "hasDeposited",
     type: "function" as const,
     inputs: [{ name: "leagueId", type: "bytes32" }, { name: "player", type: "address" }],
@@ -100,7 +110,9 @@ export function leagueIdToBytes32(uuid: string): `0x${string}` {
  * Used only by the creator on league creation.
  */
 export function buildCreateLeagueCalls(leagueUuid: string, entryFeeUsdc: number): Call[] {
-  const amount        = BigInt(Math.round(entryFeeUsdc * 1_000_000));
+  const entryFeeRaw   = BigInt(Math.round(entryFeeUsdc * 1_000_000));
+  // User pays entryFee + 5% platform fee; approve the total
+  const approveAmount = BigInt(Math.round(entryFeeUsdc * 1.05 * 1_000_000));
   const leagueBytes32 = leagueIdToBytes32(leagueUuid);
 
   const createCall: Call = {
@@ -108,7 +120,7 @@ export function buildCreateLeagueCalls(leagueUuid: string, entryFeeUsdc: number)
     data: encodeFunctionData({
       abi: PREDICTION_POOL_ABI,
       functionName: "createLeague",
-      args: [leagueBytes32, BigInt(Math.round(entryFeeUsdc * 1_000_000))],
+      args: [leagueBytes32, entryFeeRaw],
     }),
   };
 
@@ -117,7 +129,7 @@ export function buildCreateLeagueCalls(leagueUuid: string, entryFeeUsdc: number)
     data: encodeFunctionData({
       abi: ERC20_ABI,
       functionName: "approve",
-      args: [POOL_ADDRESS, amount],
+      args: [POOL_ADDRESS, approveAmount],
     }),
   };
 
@@ -138,7 +150,8 @@ export function buildCreateLeagueCalls(leagueUuid: string, entryFeeUsdc: number)
  * Pass both calls to <Transaction calls={buildDepositCalls(...)} />.
  */
 export function buildDepositCalls(leagueUuid: string, entryFeeUsdc: number): Call[] {
-  const amount        = BigInt(Math.round(entryFeeUsdc * 1_000_000)); // 6 decimals
+  // User pays entryFee + 5% platform fee; approve the total
+  const amount        = BigInt(Math.round(entryFeeUsdc * 1.05 * 1_000_000));
   const leagueBytes32 = leagueIdToBytes32(leagueUuid);
 
   const approveCall: Call = {

@@ -41,8 +41,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Design system / tooling (not part of the app)
-Prediction Leagues Design System/
+# Design files / handoff packages (not part of the app)
+*.zip
+prediction leagues/
+Prediction Leagues*/
 
 # Claude Code local settings
 .claude/
@@ -50,3 +52,6 @@ Prediction Leagues Design System/
 # Audit / analysis reports
 report.md
 slither-report*
+
+# Local dev notes (not for repo)
+NOTES.md

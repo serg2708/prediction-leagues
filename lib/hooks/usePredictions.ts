@@ -1,7 +1,9 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+
+import { savePredictionAction } from "@/app/actions/save-prediction";
 import { MOCK_PREDICTIONS } from "@/lib/mock";
+import { supabase } from "@/lib/supabase";
 import type { Prediction, PredictionOutcome } from "@/lib/types";
 
 const USE_MOCK = !process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -42,7 +44,9 @@ export function usePredictions(leagueId: string | undefined, profileId: string |
   }, [leagueId, profileId]);
 
   const predict = useCallback(
-    async (matchId: string, outcome: PredictionOutcome) => {
+    async (matchId: string, outcome: PredictionOutcome, matchStatus?: string) => {
+      if (matchStatus && matchStatus !== "upcoming") return;
+
       // Optimistic update
       setPredictions((prev) => ({
         ...prev,
@@ -59,10 +63,22 @@ export function usePredictions(leagueId: string | undefined, profileId: string |
 
       setSaving(true);
       try {
-        await supabase.from("predictions").upsert(
-          { match_id: matchId, profile_id: profileId, outcome },
-          { onConflict: "match_id,profile_id" }
-        );
+        const result = await savePredictionAction(matchId, profileId, outcome);
+        if (!result.ok) {
+          // Revert optimistic update on failure
+          setPredictions((prev) => {
+            const next = { ...prev };
+            if (next[matchId]?.outcome === outcome) delete next[matchId];
+            return next;
+          });
+          console.error("Failed to save prediction:", result.error);
+        }
+      } catch {
+        setPredictions((prev) => {
+          const next = { ...prev };
+          delete next[matchId];
+          return next;
+        });
       } finally {
         setSaving(false);
       }

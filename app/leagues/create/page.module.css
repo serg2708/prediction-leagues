@@ -5,20 +5,27 @@
   min-height: 100vh;
   background: var(--bg);
   color: var(--fg);
+  padding-bottom: 160px;
 }
 
-/* ── Header ──────────────────────────────────────────────── */
+/* ── Glass header ────────────────────────────────────────── */
 .header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-filter);
+  -webkit-backdrop-filter: var(--glass-filter);
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .back {
-  background: var(--accent-bg);
-  border: none;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border-m);
   color: var(--fg);
   font-size: 18px;
   width: 36px;
@@ -29,81 +36,43 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: background 0.15s;
 }
+
+.back:hover { background: rgba(255,255,255,0.10); }
 
 .title {
   font-size: 17px;
   font-weight: 700;
+  letter-spacing: -0.2px;
 }
 
-/* ── Progress ────────────────────────────────────────────── */
+/* ── Progress — segmented bar ────────────────────────────── */
 .progress {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px 24px 8px;
-  gap: 0;
+  gap: 4px;
+  padding: 16px 16px 0;
 }
 
-.progressItem {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.progressDot {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 2px solid var(--border-m);
-  background: transparent;
-  color: var(--fg-dim);
-  font-size: 12px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: all 0.2s ease;
+.progressSegment {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border-m);
+  transition: background 0.25s ease;
 }
 
 .progressActive {
-  border-color: var(--accent-2);
-  background: var(--grad);
-  color: #fff;
+  background: var(--accent);
 }
 
 .progressDone {
-  border-color: var(--accent);
   background: var(--accent);
-  color: #fff;
-}
-
-.progressLabel {
-  font-size: 12px;
-  color: var(--fg-dim);
-  white-space: nowrap;
-}
-
-.progressLabelActive {
-  color: var(--fg-2);
-  font-weight: 600;
-}
-
-.progressLine {
-  width: 32px;
-  height: 2px;
-  background: var(--border-m);
-  margin: 0 4px;
-}
-
-.progressLineDone {
-  background: var(--grad);
+  opacity: 0.5;
 }
 
 /* ── Body ────────────────────────────────────────────────── */
 .body {
-  flex: 1;
   padding: 24px 16px;
 }
 
@@ -116,36 +85,35 @@
 .stepTitle {
   font-size: 22px;
   font-weight: 700;
-  letter-spacing: -0.4px;
+  letter-spacing: -0.5px;
 }
 
 .stepDesc {
   font-size: 14px;
-  color: var(--fg-dim);
-  margin-top: -10px;
+  color: var(--fg-muted);
+  margin-top: -8px;
 }
 
 /* ── Name input ──────────────────────────────────────────── */
 .input {
   width: 100%;
   background: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  border: 1px solid var(--border-m);
+  border-radius: 14px;
   padding: 14px 16px;
   font-size: 16px;
   color: var(--fg);
   outline: none;
   font-family: inherit;
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .input:focus {
-  border-color: var(--accent-2);
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-press);
 }
 
-.input::placeholder {
-  color: var(--fg-ghost);
-}
+.input::placeholder { color: var(--fg-ghost); }
 
 .charCount {
   font-size: 12px;
@@ -168,7 +136,7 @@
   padding: 16px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 16px;
   cursor: pointer;
   text-align: left;
   transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
@@ -176,14 +144,25 @@
 }
 
 .sportCardActive {
-  border-color: var(--accent-2);
-  background: var(--accent-bg-act);
+  border-color: var(--border-accent);
+  background: var(--accent-bg);
+  box-shadow: var(--shadow-press);
 }
 
 .sportEmoji {
-  font-size: 28px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: var(--violet-soft);
+  border: 1px solid rgba(123,92,255,0.35);
 }
+
+.sportEmoji[data-sport="nba"]      { background: rgba(255,178,61,0.18);  border-color: rgba(255,178,61,0.32); }
+.sportEmoji[data-sport="cs2"]      { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.16); }
+.sportEmoji[data-sport="football"] { background: var(--violet-soft);     border-color: rgba(123,92,255,0.35); }
 
 .sportLabel {
   font-size: 15px;
@@ -199,39 +178,120 @@
   margin-top: 2px;
 }
 
+/* ── Tournament list ─────────────────────────────────────── */
+.tourList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tourRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-shadow: var(--shadow-sm);
+}
+
+.tourRowActive {
+  border-color: var(--border-accent);
+  background: var(--accent-bg);
+  box-shadow: var(--shadow-press);
+}
+
+.tourInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tourName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tourMeta {
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.tourCheck {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.tourLoading {
+  display: flex;
+  justify-content: center;
+  padding: 32px 0;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.tourEmpty {
+  text-align: center;
+  color: var(--fg-dim);
+  font-size: 14px;
+  padding: 32px 0;
+}
+
 /* ── Entry fee grid ──────────────────────────────────────── */
 .feeGrid {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .feeBtn {
   flex: 1;
-  min-width: 60px;
+  min-width: 56px;
   padding: 14px 8px;
   background: var(--bg-elevated);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-m);
   border-radius: 12px;
   color: var(--fg-muted);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
   box-shadow: var(--shadow-sm);
+  font-family: var(--font-geist-mono, monospace);
 }
 
 .feeBtnActive {
-  background: var(--accent-bg-act);
-  border-color: var(--accent-2);
-  color: var(--fg);
+  background: var(--accent-bg);
+  border-color: var(--border-accent);
+  color: var(--accent);
+  box-shadow: var(--shadow-press);
 }
 
 /* ── Summary ─────────────────────────────────────────────── */
 .summary {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -245,19 +305,62 @@
   font-size: 14px;
 }
 
-.summaryRow span:first-child {
-  color: var(--fg-dim);
-}
+.summaryRow span:first-child { color: var(--fg-dim); }
 
 .summaryHighlight {
   color: var(--accent);
   font-weight: 700;
+  font-family: var(--font-geist-mono, monospace);
+}
+
+.summaryFee {
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+/* ── Transaction wrapper ─────────────────────────────────── */
+.txWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.txBtn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 16px;
+  border: none;
+  background: var(--grad);
+  color: var(--grad-text);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 8px 24px rgba(0,82,255,0.25);
+  transition: box-shadow 0.15s;
+}
+
+.txBtn:hover { box-shadow: 0 10px 32px rgba(0,82,255,0.35); }
+
+.regError {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #ff4d4f;
+  text-align: center;
 }
 
 /* ── Footer CTA ──────────────────────────────────────────── */
 .footer {
-  padding: 16px;
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  padding: 12px 16px calc(env(safe-area-inset-bottom, 0px) + 115px);
+  background: var(--bg);
   border-top: 1px solid var(--border);
+  z-index: 35;
 }
 
 .cta {
@@ -266,17 +369,23 @@
   border-radius: 16px;
   border: none;
   background: var(--grad);
-  color: #fff;
+  color: var(--grad-text);
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.15s ease;
   font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: opacity 0.15s ease, box-shadow 0.15s;
+  box-shadow: 0 8px 24px rgba(0,82,255,0.25);
 }
 
 .ctaDisabled {
   opacity: 0.35;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .ctaLoading {
@@ -284,21 +393,21 @@
   cursor: not-allowed;
 }
 
-/* ── Public toggle ──────────────────────────────────────── */
+/* ── Public toggle ───────────────────────────────────────── */
 .toggleRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-top: 20px;
   padding: 14px 16px;
-  background: var(--accent-bg);
-  border-radius: 12px;
-  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+  border-radius: 14px;
+  border: 1px solid var(--border-m);
 }
 
 .toggleLabel {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--fg);
   margin: 0 0 2px;
 }
@@ -333,23 +442,22 @@
   transition: transform 0.2s;
 }
 
-.toggleOn {
-  background: var(--grad);
-}
+.toggleOn { background: var(--grad); }
+.toggleOn::after { transform: translateX(20px); }
 
-.toggleOn::after {
-  transform: translateX(20px);
-}
-
-/* ── Min players ────────────────────────────────────────── */
+/* ── Min players ─────────────────────────────────────────── */
 .minPlayersRow {
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
 .minPlayersLabel {
   font-size: 13px;
   color: var(--fg-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   margin-bottom: 8px;
+  display: block;
 }
 
 .minPlayersBtns {
@@ -359,17 +467,19 @@
 
 .minBtn {
   flex: 1;
-  padding: 8px 0;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--accent-bg);
-  color: var(--fg-2);
+  padding: 10px 0;
+  border-radius: 10px;
+  border: 1px solid var(--border-m);
+  background: rgba(255,255,255,0.03);
+  color: var(--fg-muted);
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.15s;
 }
 
 .minBtnActive {
-  border-color: var(--accent-2);
-  background: var(--accent-bg-act);
-  color: var(--fg);
+  border-color: var(--border-accent);
+  background: var(--accent-bg);
+  color: var(--accent);
 }

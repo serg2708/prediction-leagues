@@ -1,15 +1,19 @@
 # Prediction Leagues
 
-A **winner-takes-all USDC prediction leagues** mini-app built on [Base](https://base.org) for the Farcaster / Coinbase ecosystem.
+A **prediction leagues mini-app** built on [Base](https://base.org) for the Farcaster / Coinbase ecosystem.
 
-Players create or join leagues, predict match outcomes across football, CS2, and NBA, and stake USDC into a shared pool — the highest-scoring player wins it all.
+Players create or join tournament-based leagues, predict match outcomes across football, CS2, and NBA, and stake USDC into a shared pool — the highest-scoring player wins it all. In case of a tie the pool is split equally.
 
 ---
 
 ## Features
 
-- **Multi-sport predictions** — Football (football-data.org), CS2 (PandaScore), NBA (BallDontLie)
-- **On-chain USDC pool** — funds held in `PredictionPool.sol` escrow on Base; payout triggered automatically
+- **Multi-sport predictions** — Football (football-data.org), CS2 (PandaScore), NBA (RapidAPI)
+- **Tournament-based lifecycle** — league ends when all tournament matches are finished, no fixed duration
+- **On-chain USDC pool** — funds held in `PredictionPoolFee.sol` escrow on Base; payout triggered automatically
+- **5% platform fee** — collected at deposit time so the pool always shows the exact prize amount
+- **Tie splitting** — `payoutMultiple()` divides the pool equally among all tied winners (dust goes to last winner)
+- **Two-phase creation** — backend registers the league on-chain (owner-only), user only approves + deposits
 - **Farcaster mini-app** — runs natively inside Base App / Warpcast via MiniKit
 - **Wallet integration** — Coinbase Smart Wallet + OnchainKit
 - **Live leaderboards** — real-time ranking via Supabase
@@ -26,7 +30,7 @@ Players create or join leagues, predict match outcomes across football, CS2, and
 | Chain | Base mainnet / Base Sepolia |
 | Wallet | Coinbase Smart Wallet + OnchainKit |
 | Database | Supabase (Postgres + Realtime + RLS) |
-| Smart Contract | Solidity 0.8.35 |
+| Smart Contract | Solidity 0.8.35 (`PredictionPoolFee.sol`) |
 | Token | USDC (ERC-20, 6 decimals) |
 | Mini-app SDK | MiniKit (Base App) |
 | Styling | CSS Modules, dark/light theme via CSS variables |
@@ -45,8 +49,8 @@ Players create or join leagues, predict match outcomes across football, CS2, and
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/serg2708/base_app.git
-cd base_app
+git clone https://github.com/serg2708/prediction-leagues.git
+cd prediction-leagues
 npm install
 ```
 
@@ -60,11 +64,13 @@ Fill in all values — see [Environment Variables](#environment-variables) below
 
 ### 3. Set up the database
 
-Run the SQL files in your Supabase SQL editor in this order:
+Run the SQL files in your Supabase SQL editor in order:
 
 ```
-supabase/schema.sql               # Tables, views, RLS policies
-supabase/notification_tokens.sql  # Farcaster push token table
+supabase/schema.sql                         # Tables, views, RLS policies
+supabase/notification_tokens.sql            # Farcaster push token table
+supabase/migrations/add_competition_id.sql  # Tournament-based league support
+supabase/migrations/add_ends_at.sql         # Ends-at timestamp for leagues
 ```
 
 ### 4. Run the dev server
@@ -79,41 +85,43 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Environment Variables
 
-Copy `.env.local.example` to `.env.local` and fill in your values:
-
-```
+```env
 # App
-NEXT_PUBLIC_URL=http://localhost:3000
+NEXT_PUBLIC_URL=                            # e.g. https://prediction-leagues.vercel.app
+NEXT_PUBLIC_PROJECT_NAME=prediction-leagues
+NEXT_PUBLIC_BUILDER_CODE=                   # Coinbase builder code for smart wallet
 
-# Coinbase Developer Platform
+# OnchainKit
 NEXT_PUBLIC_ONCHAINKIT_API_KEY=
+
+# Chain
+NEXT_PUBLIC_CHAIN_ID=84532                  # 8453 for mainnet
+NEXT_PUBLIC_POOL_ADDRESS=<contract_address>
 
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=        # server-only
+SUPABASE_SERVICE_ROLE_KEY=
 
-# Smart contract
-NEXT_PUBLIC_POOL_ADDRESS=         # deployed PredictionPool address
-NEXT_PUBLIC_CHAIN_ID=84532        # 84532 = Sepolia, 8453 = mainnet
+# Sports APIs
+FOOTBALL_DATA_API_KEY=                      # football-data.org (free)
+PANDASCORE_API_KEY=                         # pandascore.co — CS2 (free, 1000 req/h)
+RAPIDAPI_KEY=                               # RapidAPI — nba-api-free-data.p.rapidapi.com
 
-# Sports data APIs
-FOOTBALL_DATA_API_KEY=            # football-data.org (free tier)
-PANDASCORE_API_KEY=               # pandascore.co (free tier)
-BALLDONTLIE_API_KEY=              # balldontlie.io (optional)
+# On-chain signer
+POOL_SIGNER_PRIVATE_KEY=                    # hot wallet — registers leagues and triggers payouts
 
-# API auth secrets (generate with: openssl rand -hex 24)
+# Admin & cron
 ADMIN_SECRET=
-NOTIFY_SECRET=
 CRON_SECRET=
+NOTIFY_SECRET=
 
 # Webhooks (optional)
 FARCASTER_WEBHOOK_SECRET=
 PANDASCORE_WEBHOOK_SECRET=
 
-# On-chain payout signer — NEVER expose client-side
-POOL_SIGNER_PRIVATE_KEY=
-RPC_URL=                          # optional: Alchemy/Infura RPC
+# Optional
+RPC_URL=                                    # Alchemy / Infura RPC (falls back to public Base RPC)
 ```
 
 > ⚠️ **Never commit `.env.local`** — it is already in `.gitignore`.  
@@ -125,87 +133,132 @@ RPC_URL=                          # optional: Alchemy/Infura RPC
 
 ```
 app/
-├── page.tsx                      # Home — league feed
-├── leagues/[id]/                 # League detail — matches, standings, history
-├── leagues/create/               # Create wizard (3 steps)
-├── leagues/join/                 # Join by invite code
-├── leaderboard/                  # Global user leaderboard
-├── profile/                      # User profile & prediction history
-├── admin/                        # Admin panel (ADMIN_SECRET gated)
+├── page.tsx                        # Home — league feed
+├── leagues/[id]/                   # League detail — matches, standings, history
+├── leagues/create/                 # Create wizard (4 steps: name → sport → tournament → fee)
+├── leagues/join/                   # Join by invite code
+├── leaderboard/                    # Global user leaderboard
+├── profile/                        # User profile & prediction history
+├── admin/                          # Admin panel (ADMIN_SECRET gated)
+├── actions/                        # Server actions
+│   ├── create-league.ts            # Save league to DB + background match sync
+│   ├── join-league.ts              # Add member to DB
+│   ├── fetch-tournaments.ts        # Return available tournaments per sport
+│   ├── register-league-onchain.ts  # Hot wallet calls createLeague() on-chain
+│   ├── save-prediction.ts          # Upsert a prediction row
+│   ├── sync-matches.ts             # Pull fixtures from sports API into DB
+│   └── upsert-profile.ts           # Create / update user profile
 └── api/
     ├── admin/
-    │   ├── finalise-league/      # Score all predictions + trigger on-chain payout
-    │   ├── sync-matches/         # Pull fixtures from sports APIs
-    │   └── search-tournaments/   # PandaScore tournament lookup
-    ├── matches/[id]/result/      # Record a match result & score predictions
-    ├── cron/                     # Vercel cron jobs (auto sync + result polling)
-    ├── webhook/                  # Farcaster frame webhooks (notifications)
-    └── webhook/pandascore/       # PandaScore result webhooks
+    │   ├── finalise-league/        # Score predictions + on-chain payout (single or split)
+    │   ├── sync-matches/           # Pull fixtures from sports APIs
+    │   └── search-tournaments/     # PandaScore tournament lookup
+    ├── matches/[id]/result/        # Record a match result & score predictions
+    └── cron/
+        ├── sync-matches/           # Twice daily: pull new fixtures for active leagues
+        ├── update-results/         # Every 15 min: poll for finished match results
+        └── finalise-leagues/       # Daily: auto-finalise completed tournaments
 
 contracts/
-└── PredictionPool.sol            # USDC escrow — createLeague, deposit, payout
+└── PredictionPoolFee.sol           # USDC escrow with 5% fee at deposit
 
 lib/
-├── contracts.ts                  # ABI, helpers (leagueIdToBytes32, buildDepositCalls)
-├── supabase.ts                   # Supabase client init
-├── types.ts                      # Shared TypeScript types
-└── hooks/                        # React hooks (useLeagues, useProfile, etc.)
+├── contracts.ts                    # ABI, helpers (leagueIdToBytes32, buildDepositCalls)
+├── fetch-matches.ts                # Sports API fetch logic (football / CS2 / NBA)
+├── mock.ts                         # Mock data for local dev without Supabase
+├── supabase.ts                     # Supabase client init
+├── types.ts                        # Shared TypeScript types
+└── hooks/                          # React hooks (useLeagues, useProfile, etc.)
 
 supabase/
-├── schema.sql                    # Full DB schema, views, RLS policies
-└── notification_tokens.sql       # Farcaster notification token storage
+├── schema.sql                      # Full DB schema, views, RLS policies
+├── notification_tokens.sql         # Farcaster notification token storage
+└── migrations/
+    ├── add_competition_id.sql      # Adds competition_id for tournament linking
+    └── add_ends_at.sql             # Adds ends_at timestamp column
 ```
 
 ---
 
 ## Smart Contract
 
-`PredictionPool.sol` — a minimal USDC escrow:
+`PredictionPoolFee.sol` — USDC escrow with 5% platform fee collected at deposit:
 
-1. **`createLeague(leagueId, entryFee)`** — admin registers a league on-chain
-2. **`deposit(leagueId)`** — player approves USDC then deposits entry fee
-3. **`payout(leagueId, winner)`** — admin pays the whole pool to the winner
+1. **`createLeague(leagueId, entryFee)`** — `onlyOwner`; backend hot wallet registers the league
+2. **`deposit(leagueId)`** — player approves `entryFee × 1.05` USDC; contract pulls the full amount, forwards 5% to `feeRecipient` immediately, adds `entryFee` to pool
+3. **`payout(leagueId, winner)`** — `onlyOwner`; sends full pool to the single winner
+4. **`payoutMultiple(leagueId, winners[])`** — `onlyOwner`; splits pool equally among tied winners (dust goes to last winner)
 
-The on-chain `leagueId` is `keccak256(abi.encodePacked(supabaseUUID))`.
+The on-chain `leagueId` is `keccak256(toHex(supabaseUUID))`.
 
 **Deployed addresses:**
 
-| Network | Address |
-|---|---|
-| Base Sepolia (testnet) | `0x31ba2DD2028E3CED203Bd475Eaf44369642bb062` |
-| USDC (Base Sepolia) | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
-| USDC (Base mainnet) | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
+| Network | Contract | Address |
+|---|---|---|
+| Base Sepolia | `PredictionPoolFee.sol` | `0x76BeBcDF89363E81Fb9960453A9BAb457EC2F2bC` |
+| Base Sepolia | USDC | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
+| Base mainnet | USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
 
-### Redeploy to Sepolia
+### League creation flow
 
-```bash
-# Install Foundry: https://getfoundry.sh
-forge create contracts/PredictionPool.sol:PredictionPool \
-  --constructor-args 0x036CbD53842c5426634e7929541eC2318f3dCF7e \
-  --rpc-url https://sepolia.base.org \
-  --private-key $DEPLOYER_KEY
+```
+1. User fills wizard (name → sport → tournament → fee)
+2. "Create League" → server action registerLeagueOnChain()
+   └─ hot wallet calls createLeague(bytes32, uint96) on-chain
+3. Fee buttons lock — cannot change fee after on-chain registration
+4. Transaction component appears
+   └─ User approves entryFee × 1.05 USDC + calls deposit()
+5. On tx success → createLeagueAction() saves league to DB
+   └─ after() triggers background match sync
+```
+
+### Payout flow
+
+```
+Cron (09:00 UTC) → /api/cron/finalise-leagues
+  → checks all active leagues for completed tournaments
+  → POST /api/admin/finalise-league
+      → queries leaderboard for top score
+      → fetches ALL members with that score
+      → if 1 winner:  payout(leagueId, winner)
+      → if tie:       payoutMultiple(leagueId, [w1, w2, ...])
+      → sends Farcaster push notifications
 ```
 
 ---
 
 ## Sports Data
 
-| Sport | Provider | How results arrive |
+| Sport | Provider | Tournaments |
 |---|---|---|
-| Football | [football-data.org](https://www.football-data.org) (free) | Cron every 15 min |
-| CS2 | [PandaScore](https://pandascore.co) (free, 1 000 req/h) | Cron every 15 min |
-| NBA | [BallDontLie](https://balldontlie.io) (free) | Cron every 15 min |
+| Football | [football-data.org](https://www.football-data.org) (free) | PL, CL, Bundesliga, Serie A, La Liga, Ligue 1 + more |
+| CS2 | [PandaScore](https://pandascore.co) (free, 1 000 req/h) | Any running/upcoming tournament (searchable) |
+| NBA | [RapidAPI — nba-api-free-data](https://rapidapi.com/api-sports/api/nba-api-free-data) (free) | NBA Regular Season, Playoffs |
 
-Results are polled automatically — no inbound webhooks required for basic operation.
+Results are polled automatically every 15 minutes via cron — no inbound webhooks required.
 
 ---
 
 ## Deployment (Vercel)
 
 1. Push to GitHub and connect the repo in [Vercel](https://vercel.com)
-2. Add all environment variables in **Settings → Environment Variables**
-3. Cron jobs are defined in `vercel.json` — they run on the Hobby plan at 15-min intervals
+2. Add all environment variables in **Settings → Environment Variables** — set them for **Production**, **Preview**, and **Development**
+3. Cron jobs are defined in `vercel.json`:
+   - `0 9 * * *` — finalise-leagues (daily 09:00 UTC)
+   - `0 */12 * * *` — sync-matches (twice daily)
+   - `*/15 * * * *` — update-results (every 15 min; Hobby plan: once daily)
 4. Set `NEXT_PUBLIC_URL` to your production Vercel URL
+
+### Mainnet deployment checklist
+
+1. Deploy `PredictionPoolFee.sol` from main wallet with:
+   - `_usdc`: `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`
+   - `_feeRecipient`: wallet that receives platform fees
+2. Copy contract address → set `NEXT_PUBLIC_POOL_ADDRESS` in Vercel
+3. BaseScan → Write Contract → `transferOwnership(hotWallet)`
+4. Verify contract on BaseScan (single file, compiler v0.8.35)
+5. Update `NEXT_PUBLIC_CHAIN_ID=8453` in Vercel
+6. Redeploy
 
 ---
 

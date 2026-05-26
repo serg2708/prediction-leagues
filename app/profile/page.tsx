@@ -2,7 +2,11 @@
 import { useEffect, useState } from "react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { useRouter } from "next/navigation";
+import { useDisconnect } from "wagmi";
 import { supabase } from "@/lib/supabase";
+import { BottomNav } from "@/app/components/BottomNav";
+import { ThemeToggle } from "@/app/components/ThemeToggle";
+import { ChevronLeft, Check, XMark, Clock, User } from "@/app/components/Icons";
 import { useProfile } from "@/lib/hooks/useProfile";
 import styles from "./page.module.css";
 
@@ -30,6 +34,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const { setMiniAppReady, isMiniAppReady } = useMiniKit();
   const { profile, profileId } = useProfile();
+  const { disconnect } = useDisconnect();
 
   const [stats, setStats]       = useState<Stats | null>(null);
   const [preds, setPreds]       = useState<PredictionRow[]>([]);
@@ -91,11 +96,12 @@ export default function ProfilePage() {
   if (!profileId) return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <button type="button" className={styles.back} onClick={() => router.back()}>←</button>
+        <button type="button" className={styles.back} onClick={() => router.back()}><ChevronLeft /></button>
         <h1 className={styles.title}>Profile</h1>
+        <div style={{ marginLeft: "auto" }}><ThemeToggle /></div>
       </header>
       <div className={styles.notConnected}>
-        <span style={{ fontSize: 36 }}>👤</span>
+        <span style={{ fontSize: 36, color: "var(--fg-muted)" }}><User size={36} /></span>
         <p>Connect your wallet to see your profile</p>
       </div>
     </div>
@@ -104,8 +110,9 @@ export default function ProfilePage() {
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <button type="button" className={styles.back} onClick={() => router.back()}>←</button>
+        <button type="button" className={styles.back} onClick={() => router.back()}><ChevronLeft /></button>
         <h1 className={styles.title}>Profile</h1>
+        <div style={{ marginLeft: "auto" }}><ThemeToggle /></div>
       </header>
 
       {/* Identity */}
@@ -113,7 +120,7 @@ export default function ProfilePage() {
         {profile?.avatar_url ? (
           <img src={profile.avatar_url} alt="avatar" className={styles.avatar} />
         ) : (
-          <div className={styles.avatarPlaceholder}>👤</div>
+          <div className={styles.avatarPlaceholder}><User size={32} /></div>
         )}
         <p className={styles.displayName}>
           {profile?.display_name ?? profileId.slice(0, 8)}
@@ -121,6 +128,13 @@ export default function ProfilePage() {
         <p className={styles.address}>
           {profileId.slice(0, 6)}…{profileId.slice(-4)}
         </p>
+        <button
+          type="button"
+          className={styles.disconnectBtn}
+          onClick={() => disconnect()}
+        >
+          Disconnect wallet
+        </button>
       </div>
 
       {/* Stats */}
@@ -161,7 +175,7 @@ export default function ProfilePage() {
                   !isFinished ? styles.predPending :
                   correct     ? styles.predCorrect : styles.predWrong
                 }`}>
-                  {!isFinished ? "⏳" : correct ? "✓" : "✗"}
+                  {!isFinished ? <Clock /> : correct ? <Check /> : <XMark />}
                 </div>
                 <div className={styles.predMatch}>
                   <p className={styles.predMatchName}>
@@ -188,6 +202,7 @@ export default function ProfilePage() {
           })
         )}
       </div>
+      <BottomNav />
     </div>
   );
 }
