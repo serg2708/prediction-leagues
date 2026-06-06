@@ -8,6 +8,7 @@
 import { createClient } from "@supabase/supabase-js";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { requireCron } from "@/lib/server-auth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
@@ -19,10 +20,8 @@ const ORIGIN = process.env.NEXT_PUBLIC_URL ?? "http://localhost:3000";
 type League = { id: string; sport: string; competition_id: string | null };
 
 export async function GET(req: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && req.headers.get("authorization") !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = requireCron(req);
+  if (authErr) return authErr;
 
   // Get all active leagues that haven't expired yet
   const { data: leagues, error } = await supabase

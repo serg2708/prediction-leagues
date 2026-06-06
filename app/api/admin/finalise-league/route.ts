@@ -8,11 +8,13 @@
  * Body: { league_id: string }
  */
 import { createClient } from "@supabase/supabase-js";
-import { NextRequest, NextResponse } from "next/server";
-import { createPublicClient, createWalletClient, http } from "viem";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { createPublicClient, createWalletClient, http, isAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { base, baseSepolia } from "viem/chains";
 import { PREDICTION_POOL_ABI, POOL_ADDRESS, leagueIdToBytes32 } from "@/lib/contracts";
+import { requireAdmin } from "@/lib/server-auth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
@@ -34,9 +36,8 @@ async function sendNotifications(fids: number[], title: string, body: string, ta
 }
 
 export async function POST(req: NextRequest) {
-  if (req.headers.get("authorization") !== `Bearer ${process.env.ADMIN_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = requireAdmin(req);
+  if (authErr) return authErr;
 
   const { league_id } = await req.json() as { league_id?: string };
   if (!league_id) {
@@ -78,6 +79,12 @@ export async function POST(req: NextRequest) {
   const isTie   = winners.length > 1;
   const top      = topOne;
 
+  // M5: Validate all winner addresses before attempting payout
+  const validWinners = winners.filter((w) => isAddress(w.profile_id as string));
+  if (validWinners.length === 0) {
+    return NextResponse.json({ error: "No valid winner addresses" }, { status: 400 });
+  }
+
   // Mark league finished if not already
   if (league.status !== "finished") {
     await supabase.from("leagues").update({ status: "finished" }).eq("id", league_id);
@@ -89,13 +96,15 @@ export async function POST(req: NextRequest) {
     .select("profile_id, profiles(fid)")
     .eq("league_id", league_id);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const allFids = (members ?? [])
-    .map((m: any) => (Array.isArray(m.profiles) ? m.profiles[0]?.fid : m.profiles?.fid) as number | null)
+    .map((m) => {
+      const p = (m as { profiles: { fid: number } | { fid: number }[] }).profiles;
+      return (Array.isArray(p) ? p[0]?.fid : p?.fid) as number | null;
+    })
     .filter((f): f is number => !!f);
 
   // Notifications
-  const winnerIds = new Set(winners.map((w) => w.profile_id));
+  const winnerIds = new Set(validWinners.map((w) => w.profile_id));
   const { data: winnerProfiles } = await supabase
     .from("profiles")
     .select("id, fid")
@@ -106,7 +115,7 @@ export async function POST(req: NextRequest) {
     .filter((f): f is number => !!f);
 
   const prize = isTie
-    ? `$${(league.pool_usdc / winners.length).toFixed(2)}`
+    ? `$${(league.pool_usdc / validWinners.length).toFixed(2)}`
     : `$${league.pool_usdc}`;
 
   if (winnerFids.length) {
@@ -134,8 +143,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       isTie,
-      winners: winners.map((w) => w.profile_id),
-      winnerName: isTie ? `${winners.length} tied players` : top.display_name,
+      winners: validWinners.map((w) => w.profile_id),
+      winnerName: isTie ? `${validWinners.length} tied players` : top.display_name,
       points: top.points,
       payout: "skipped — POOL_SIGNER_PRIVATE_KEY not set",
     });
@@ -150,7 +159,6 @@ export async function POST(req: NextRequest) {
       (privateKey.startsWith("0x") ? privateKey : `0x${privateKey}`) as `0x${string}`
     );
     const leagueBytes32 = leagueIdToBytes32(league_id);
-    console.log(`[finalise-league] isTie=${isTie} winners=${winners.length} league=${leagueBytes32}`);
 
     const walletClient = createWalletClient({ account, chain, transport: http(rpcUrl) });
     const publicClient = createPublicClient({ chain, transport: http(rpcUrl) });
@@ -160,7 +168,7 @@ export async function POST(req: NextRequest) {
           address: POOL_ADDRESS,
           abi: PREDICTION_POOL_ABI,
           functionName: "payoutMultiple",
-          args: [leagueBytes32, winners.map((w) => w.profile_id as `0x${string}`)],
+          args: [leagueBytes32, validWinners.map((w) => w.profile_id as `0x${string}`)],
         })
       : await walletClient.writeContract({
           address: POOL_ADDRESS,
@@ -177,7 +185,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: false,
       isTie,
-      winners: winners.map((w) => w.profile_id),
+      winners: validWinners.map((w) => w.profile_id),
       error: String(err),
     }, { status: 500 });
   }
@@ -186,8 +194,8 @@ export async function POST(req: NextRequest) {
     ok: true,
     leagueId: league_id,
     isTie,
-    winners: winners.map((w) => w.profile_id),
-    winnerName: isTie ? `${winners.length} players tied` : top.display_name,
+    winners: validWinners.map((w) => w.profile_id),
+    winnerName: isTie ? `${validWinners.length} players tied` : top.display_name,
     points: top.points,
     txHash,
   });

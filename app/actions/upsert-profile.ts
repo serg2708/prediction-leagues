@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@supabase/supabase-js";
+import { isValidAddress } from "@/lib/server-auth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
@@ -14,6 +15,9 @@ export async function upsertProfileAction(params: {
   fid?: number;
 }): Promise<void> {
   const { id, displayName, avatarUrl, fid } = params;
+
+  // C6: Validate that id is a real EVM wallet address
+  if (!isValidAddress(id)) return;
 
   await supabase
     .from("profiles")

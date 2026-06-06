@@ -95,8 +95,6 @@ function JoinLeagueContent() {
       if (!USE_MOCK && profileId && txHash) {
         const result = await joinLeagueAction({
           leagueId: league.id,
-          entryFeeUsdc: league.entry_fee_usdc,
-          currentPoolUsdc: league.pool_usdc,
           profileId,
           txHash,
         });

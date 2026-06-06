@@ -10,10 +10,13 @@
 import { createClient } from "@supabase/supabase-js";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { createPublicClient, createWalletClient, http } from "viem";
+import { createPublicClient, createWalletClient, http, isAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { base, baseSepolia } from "viem/chains";
 import { PREDICTION_POOL_ABI, POOL_ADDRESS, leagueIdToBytes32 } from "@/lib/contracts";
+import { requireAdmin } from "@/lib/server-auth";
+
+const VALID_OUTCOMES = new Set<string>(["home", "draw", "away", "team1", "team2"]);
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
@@ -38,15 +41,15 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (req.headers.get("authorization") !== `Bearer ${process.env.ADMIN_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = requireAdmin(req);
+  if (authErr) return authErr;
 
   const { id: matchId } = await params;
   const { result, score_home, score_away } = await req.json();
 
-  if (!result) {
-    return NextResponse.json({ error: "result is required" }, { status: 400 });
+  // M4: Validate result against known enum values
+  if (!result || !VALID_OUTCOMES.has(result)) {
+    return NextResponse.json({ error: "Invalid result value" }, { status: 400 });
   }
 
   // 1 — Load match; bail out early if already finished (prevents double point awards)
@@ -85,8 +88,10 @@ export async function POST(
     .eq("outcome", result);
 
   const correctFids = (correctPreds ?? [])
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .map((p: any) => (Array.isArray(p.profiles) ? p.profiles[0]?.fid : p.profiles?.fid) as number | null)
+    .map((p) => {
+      const profiles = (p as { profiles: { fid: number } | { fid: number }[] }).profiles;
+      return (Array.isArray(profiles) ? profiles[0]?.fid : profiles?.fid) as number | null;
+    })
     .filter((f): f is number => !!f);
 
   if (correctFids.length) {
@@ -98,7 +103,7 @@ export async function POST(
     );
   }
 
-  // 4 — Check if all matches in the league are finished → trigger payout
+  // 5 — Check if all matches in the league are finished → trigger payout
   const { data: pending } = await supabase
     .from("matches")
     .select("id")
@@ -112,16 +117,19 @@ export async function POST(
   return NextResponse.json({ ok: true, matchId, leagueId: match.league_id });
 }
 
-/** Find the winner, mark the league finished, send payout notification. */
+/** Find the winner, mark the league finished atomically, send payout notification. */
 async function finaliseLeague(leagueId: string) {
-  // Guard: skip if league is already finished (prevents double payout)
-  const { data: leagueCheck } = await supabase
+  // H5: Atomic update — only proceeds if status is not already "finished"
+  // This prevents double-payout from concurrent calls
+  const { data: updated } = await supabase
     .from("leagues")
-    .select("status")
+    .update({ status: "finished" })
     .eq("id", leagueId)
+    .neq("status", "finished")
+    .select("id")
     .single();
 
-  if (leagueCheck?.status === "finished") return;
+  if (!updated) return; // already finished, nothing to do
 
   // Get top score
   const { data: top } = await supabase
@@ -141,15 +149,10 @@ async function finaliseLeague(leagueId: string) {
     .eq("league_id", leagueId)
     .eq("points", top.points);
 
-  const winners = allTop ?? [top];
+  const allWinners = allTop ?? [top];
+  // M5: Filter out any non-EVM addresses before payout
+  const winners = allWinners.filter((w) => isAddress(w.profile_id as string));
   const isTie   = winners.length > 1;
-
-  // Mark league finished
-  await supabase
-    .from("leagues")
-    .update({ status: "finished" })
-    .eq("id", leagueId)
-    .neq("status", "finished");
 
   // Get pool amount for notification
   const { data: league } = await supabase
@@ -164,13 +167,16 @@ async function finaliseLeague(leagueId: string) {
     .select("profile_id, profiles(fid)")
     .eq("league_id", leagueId);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const allFids = (members ?? [])
-    .map((m: any) => (Array.isArray(m.profiles) ? m.profiles[0]?.fid : m.profiles?.fid) as number | null)
+    .map((m) => {
+      const p = (m as { profiles: { fid: number } | { fid: number }[] }).profiles;
+      return (Array.isArray(p) ? p[0]?.fid : p?.fid) as number | null;
+    })
     .filter((f): f is number => !!f);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const winnerFid = (Array.isArray(top.profiles) ? (top.profiles as any[])[0]?.fid : (top.profiles as any)?.fid) as number | null;
+  const topProfiles = (top.profiles as { fid: number } | { fid: number }[] | null);
+  const winnerFid = (Array.isArray(topProfiles) ? topProfiles[0]?.fid : topProfiles?.fid) as number | null;
+
   if (winnerFid) {
     const prize = isTie
       ? `$${((league?.pool_usdc ?? 0) / winners.length).toFixed(2)} (split)`
@@ -195,8 +201,9 @@ async function finaliseLeague(leagueId: string) {
     );
   }
 
-  // On-chain payout via backend signer
-  await onChainPayout(leagueId, winners.map((w) => w.profile_id as string));
+  if (winners.length > 0) {
+    await onChainPayout(leagueId, winners.map((w) => w.profile_id as string));
+  }
 }
 
 async function onChainPayout(leagueUuid: string, winnerAddresses: string[]) {
@@ -210,7 +217,9 @@ async function onChainPayout(leagueUuid: string, winnerAddresses: string[]) {
   const chain   = chainId === 8453 ? base : baseSepolia;
   const rpcUrl  = process.env.RPC_URL ?? chain.rpcUrls.default.http[0];
 
-  const account      = privateKeyToAccount(privateKey as `0x${string}`);
+  // L1: Normalize private key prefix
+  const normalizedKey = (privateKey.startsWith("0x") ? privateKey : `0x${privateKey}`) as `0x${string}`;
+  const account      = privateKeyToAccount(normalizedKey);
   const walletClient = createWalletClient({ account, chain, transport: http(rpcUrl) });
   const publicClient = createPublicClient({ chain, transport: http(rpcUrl) });
 
@@ -238,3 +247,4 @@ async function onChainPayout(leagueUuid: string, winnerAddresses: string[]) {
     console.error("On-chain payout failed:", err);
   }
 }
+

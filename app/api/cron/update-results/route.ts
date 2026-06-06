@@ -9,6 +9,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { fetchNbaScoreboard } from "@/lib/fetch-matches";
+import { requireCron } from "@/lib/server-auth";
 import type { PredictionOutcome } from "@/lib/types";
 
 const supabase = createClient(
@@ -153,10 +154,8 @@ async function recordResult(
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && req.headers.get("authorization") !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = requireCron(req);
+  if (authErr) return authErr;
 
   // Matches that started > 105 minutes ago and are still not finished
   const cutoff = new Date(Date.now() - 105 * 60 * 1000).toISOString();

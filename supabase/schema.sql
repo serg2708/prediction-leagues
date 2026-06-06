@@ -138,6 +138,14 @@ begin
 end;
 $$;
 
+-- Atomically increment a league's pool balance (used by joinLeagueAction)
+create or replace function increment_pool(p_league_id uuid, p_amount numeric)
+returns void language plpgsql security definer as $$
+begin
+  update leagues set pool_usdc = pool_usdc + p_amount where id = p_league_id;
+end;
+$$;
+
 -- ─────────────────────────────────────────────────────────────
 -- Row-Level Security
 -- ─────────────────────────────────────────────────────────────
@@ -149,28 +157,19 @@ alter table matches        enable row level security;
 alter table predictions    enable row level security;
 alter table deposits       enable row level security;
 
--- Profiles: anyone can read; only own row writable
+-- All writes go through server actions using the service role key.
+-- The service role bypasses RLS entirely, so we only need read
+-- policies here. Direct anon client writes are intentionally blocked.
+
 create policy "profiles_read"   on profiles for select using (true);
-create policy "profiles_insert" on profiles for insert with check (true);
 create policy "profiles_update" on profiles for update using (auth.uid()::text = id);
 
--- Leagues: readable by members; insertable by authenticated users
-create policy "leagues_read"   on leagues for select using (true);
-create policy "leagues_insert" on leagues for insert with check (true);
-create policy "leagues_update" on leagues for update using (true);
+create policy "leagues_read"    on leagues for select using (true);
 
--- League members: readable by all; insert/update own rows
-create policy "members_read"   on league_members for select using (true);
-create policy "members_insert" on league_members for insert with check (true);
+create policy "members_read"    on league_members for select using (true);
 
--- Matches: public read; only service role inserts/updates
-create policy "matches_read" on matches for select using (true);
+create policy "matches_read"    on matches for select using (true);
 
--- Predictions: readable by all; players manage own predictions
-create policy "predictions_read"   on predictions for select using (true);
-create policy "predictions_insert" on predictions for insert with check (true);
-create policy "predictions_update" on predictions for update using (true);
+create policy "predictions_read" on predictions for select using (true);
 
--- Deposits: own rows only
 create policy "deposits_read"   on deposits for select using (true);
-create policy "deposits_insert" on deposits for insert with check (true);

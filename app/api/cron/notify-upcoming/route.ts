@@ -5,8 +5,10 @@
  * GET /api/cron/notify-upcoming
  * Authorization: Bearer <CRON_SECRET>
  */
-import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { requireCron } from "@/lib/server-auth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
@@ -16,16 +18,13 @@ const supabase = createClient(
 const ORIGIN = process.env.NEXT_PUBLIC_URL ?? "http://localhost:3000";
 
 export async function GET(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = requireCron(req);
+  if (authErr) return authErr;
 
   const now  = new Date();
   const from = new Date(now.getTime() + 30 * 60_000).toISOString();
   const to   = new Date(now.getTime() + 90 * 60_000).toISOString();
 
-  // Matches starting in the next 30-90 minutes
   const { data: matches } = await supabase
     .from("matches")
     .select("id, team_home, team_away, league_id, starts_at")
@@ -40,18 +39,20 @@ export async function GET(req: NextRequest) {
   let notified = 0;
 
   for (const match of matches) {
-    // Get all members of this league with their FIDs
     const { data: members } = await supabase
       .from("league_members")
       .select("profile_id, profiles(fid)")
       .eq("league_id", match.league_id);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fids = (members ?? [])
-      .map((m: any) => (Array.isArray(m.profiles) ? m.profiles[0]?.fid : m.profiles?.fid) as number | null)
+      .map((m) => {
+        const p = (m as { profiles: { fid: number } | { fid: number }[] }).profiles;
+        return (Array.isArray(p) ? p[0]?.fid : p?.fid) as number | null;
+      })
       .filter((f): f is number => !!f);
 
     if (!fids.length) continue;
+    if (!process.env.NOTIFY_SECRET) continue;
 
     const minutesUntil = Math.round(
       (new Date(match.starts_at).getTime() - now.getTime()) / 60_000
@@ -65,7 +66,7 @@ export async function GET(req: NextRequest) {
       },
       body: JSON.stringify({
         fids,
-        title: "Match starting soon ⚽",
+        title: "Match starting soon",
         body: `${match.team_home} vs ${match.team_away} in ~${minutesUntil} min — make your prediction!`,
         targetUrl: `${ORIGIN}/leagues/${match.league_id}`,
       }),

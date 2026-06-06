@@ -4,6 +4,7 @@
  */
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/server-auth";
 
 type PandaTournament = {
   id: number;
@@ -15,9 +16,8 @@ type PandaTournament = {
 };
 
 export async function GET(req: NextRequest) {
-  if (req.headers.get("authorization") !== `Bearer ${process.env.ADMIN_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = requireAdmin(req);
+  if (authErr) return authErr;
 
   const { searchParams } = req.nextUrl;
   const q     = searchParams.get("q") ?? "";

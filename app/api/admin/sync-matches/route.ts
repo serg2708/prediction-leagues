@@ -11,8 +11,8 @@
 import { createClient } from "@supabase/supabase-js";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
 import { fetchCs2Matches, fetchFootballMatches, fetchNbaMatches, type MatchRow } from "@/lib/fetch-matches";
+import { requireAdmin } from "@/lib/server-auth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
@@ -22,9 +22,8 @@ const supabase = createClient(
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  if (req.headers.get("authorization") !== `Bearer ${process.env.ADMIN_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = requireAdmin(req);
+  if (authErr) return authErr;
 
   const body = await req.json() as { league_id?: string; sport?: string; competition?: string; tournament?: string };
   const { league_id, sport, competition, tournament } = body;
