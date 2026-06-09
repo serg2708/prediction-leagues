@@ -58,7 +58,7 @@ export async function fetchFootballMatches(competition = "PL"): Promise<MatchRow
   if (!res.ok) throw new Error(`football-data.org error: ${res.status}`);
   const json = (await res.json()) as { matches: FootballMatch[] };
 
-  return json.matches.slice(0, 10).map((m) => ({
+  return json.matches.slice(0, 50).map((m) => ({
     team_home:   m.homeTeam.shortName ?? m.homeTeam.name,
     team_away:   m.awayTeam.shortName ?? m.awayTeam.name,
     sport:       "football" as const,

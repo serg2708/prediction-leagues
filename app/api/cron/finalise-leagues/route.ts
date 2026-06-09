@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   // All active/pending leagues
   const { data: leagues, error } = await supabase
     .from("leagues")
-    .select("id, name, ends_at, competition_id")
+    .select("id, name, sport, ends_at, competition_id")
     .in("status", ["active", "pending"]);
 
   if (error || !leagues?.length) {
@@ -53,7 +53,24 @@ export async function GET(req: NextRequest) {
       continue;
     }
 
-    // Check for any unfinished matches
+    // Pull fresh matches from the API before deciding — avoids premature finalization
+    // when only a subset of competition matches have been synced so far.
+    if (league.competition_id) {
+      await fetch(`${ORIGIN}/api/admin/sync-matches`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization:  `Bearer ${process.env.ADMIN_SECRET}`,
+        },
+        body: JSON.stringify({
+          league_id:   league.id,
+          sport:       league.sport,
+          competition: league.competition_id,
+        }),
+      }).catch(() => { /* best-effort — don't block finalization on sync failure */ });
+    }
+
+    // Check for any unfinished matches (after the fresh sync above)
     const { data: pending } = await supabase
       .from("matches")
       .select("id")
