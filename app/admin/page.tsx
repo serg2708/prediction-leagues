@@ -1,8 +1,8 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import { SportIcon } from "@/app/components/Icons";
 import { supabase } from "@/lib/supabase";
 import type { League, Match, PredictionOutcome, Sport } from "@/lib/types";
-import { SportIcon } from "@/app/components/Icons";
 import styles from "./page.module.css";
 
 const FOOTBALL_COMPETITIONS = [
@@ -267,7 +267,10 @@ function LeagueBlock({ league, onDeleted }: { league: League; onDeleted: (id: st
   }
 
   async function deleteLeague() {
-    if (!confirm(`Delete league "${league.name}"? This cannot be undone.`)) return;
+    const poolWarning = Number(league.pool_usdc) > 0
+      ? `\n\n⚠️ Pool has $${league.pool_usdc} USDC — refund participants on-chain manually.`
+      : "";
+    if (!confirm(`Delete league "${league.name}"? This cannot be undone.${poolWarning}`)) return;
     setDeleting(true);
     setDelErr(null);
     const res = await fetch("/api/admin/delete-league", {
@@ -318,7 +321,7 @@ function LeagueBlock({ league, onDeleted }: { league: League; onDeleted: (id: st
         </button>
         {regMsg && <span className={styles.syncMsg}>{regMsg}</span>}
         {regErr && <span className={styles.syncErr}>{regErr}</span>}
-        {league.status === "pending" && Number(league.pool_usdc) === 0 && (
+        {league.status === "pending" && (
           <>
             <button
               type="button"

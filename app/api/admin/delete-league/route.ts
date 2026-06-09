@@ -40,13 +40,6 @@ export async function DELETE(req: NextRequest) {
     );
   }
 
-  if (Number(league.pool_usdc) > 0) {
-    return NextResponse.json(
-      { error: "League has funds in pool — refund deposits on-chain before deleting" },
-      { status: 409 }
-    );
-  }
-
   // deposits has no CASCADE — delete manually first
   await supabase.from("deposits").delete().eq("league_id", league_id);
 
