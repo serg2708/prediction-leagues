@@ -148,7 +148,7 @@ function MatchRow({
 
 // ── League block ───────────────────────────────────────────────────────────────
 
-function LeagueBlock({ league }: { league: League }) {
+function LeagueBlock({ league, onDeleted }: { league: League; onDeleted: (id: string) => void }) {
   const [open, setOpen]         = useState(false);
   const [matches, setMatches]   = useState<Match[]>([]);
   const [loadingM, setLoadingM] = useState(false);
@@ -167,6 +167,8 @@ function LeagueBlock({ league }: { league: League }) {
   const [registering, setRegistering] = useState(false);
   const [regMsg, setRegMsg]     = useState<string | null>(null);
   const [regErr, setRegErr]     = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [delErr, setDelErr]     = useState<string | null>(null);
 
   async function registerOnChain() {
     setRegistering(true);
@@ -264,6 +266,24 @@ function LeagueBlock({ league }: { league: League }) {
     }
   }
 
+  async function deleteLeague() {
+    if (!confirm(`Delete league "${league.name}"? This cannot be undone.`)) return;
+    setDeleting(true);
+    setDelErr(null);
+    const res = await fetch("/api/admin/delete-league", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ league_id: league.id }),
+    });
+    const json = await res.json() as { ok?: boolean; error?: string };
+    setDeleting(false);
+    if (json.ok) {
+      onDeleted(league.id);
+    } else {
+      setDelErr(json.error ?? "Error");
+    }
+  }
+
   function onFinished(id: string) {
     setMatches((prev) =>
       prev.map((m) => (m.id === id ? { ...m, status: "finished" } : m))
@@ -298,6 +318,20 @@ function LeagueBlock({ league }: { league: League }) {
         </button>
         {regMsg && <span className={styles.syncMsg}>{regMsg}</span>}
         {regErr && <span className={styles.syncErr}>{regErr}</span>}
+        {league.status === "pending" && Number(league.pool_usdc) === 0 && (
+          <>
+            <button
+              type="button"
+              className={styles.syncBtn}
+              style={{ background: "#8b0000", marginLeft: "auto" }}
+              disabled={deleting}
+              onClick={deleteLeague}
+            >
+              {deleting ? "Deleting…" : "🗑 Delete league"}
+            </button>
+            {delErr && <span className={styles.syncErr}>{delErr}</span>}
+          </>
+        )}
       </div>
 
       {league.status === "finished" && (
@@ -518,7 +552,11 @@ export default function AdminPage() {
         <div className={styles.empty}>No leagues found</div>
       ) : (
         leagues.map((l) => (
-          <LeagueBlock key={l.id} league={l} />
+          <LeagueBlock
+            key={l.id}
+            league={l}
+            onDeleted={(id) => setLeagues((prev) => prev.filter((x) => x.id !== id))}
+          />
         ))
       )}
     </div>
