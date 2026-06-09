@@ -39,12 +39,10 @@ function fmt(iso: string) {
 function MatchRow({
   match,
   sport,
-  secret,
   onFinished,
 }: {
   match: Match;
   sport: Sport;
-  secret: string;
   onFinished: (id: string) => void;
 }) {
   const [selected, setSelected] = useState<PredictionOutcome | null>(
@@ -62,10 +60,7 @@ function MatchRow({
     setSaving(true);
     const res = await fetch(`/api/matches/${match.id}/result`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${secret}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         result:     selected,
         score_home: scoreHome !== "" ? Number(scoreHome) : undefined,
@@ -153,7 +148,7 @@ function MatchRow({
 
 // ── League block ───────────────────────────────────────────────────────────────
 
-function LeagueBlock({ league, secret }: { league: League; secret: string }) {
+function LeagueBlock({ league }: { league: League }) {
   const [open, setOpen]         = useState(false);
   const [matches, setMatches]   = useState<Match[]>([]);
   const [loadingM, setLoadingM] = useState(false);
@@ -179,10 +174,7 @@ function LeagueBlock({ league, secret }: { league: League; secret: string }) {
     setRegErr(null);
     const res = await fetch("/api/admin/register-league", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${secret}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ league_id: league.id }),
     });
     const json = await res.json() as { ok?: boolean; error?: string };
@@ -200,10 +192,7 @@ function LeagueBlock({ league, secret }: { league: League; secret: string }) {
     setPayErr(null);
     const res = await fetch("/api/admin/finalise-league", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${secret}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ league_id: league.id }),
     });
     const json = await res.json() as { ok?: boolean; winnerName?: string; txHash?: string; payout?: string; error?: string };
@@ -237,8 +226,7 @@ function LeagueBlock({ league, secret }: { league: League; secret: string }) {
     setTournamentResults([]);
     setSearchErr(null);
     const res = await fetch(
-      `/api/admin/search-tournaments?sport=${league.sport}&q=${encodeURIComponent(tournamentQ)}`,
-      { headers: { Authorization: `Bearer ${secret}` } }
+      `/api/admin/search-tournaments?sport=${league.sport}&q=${encodeURIComponent(tournamentQ)}`
     );
     const json = await res.json() as { slug: string; name: string }[] | { error: string };
     if (!res.ok || !Array.isArray(json)) {
@@ -257,10 +245,7 @@ function LeagueBlock({ league, secret }: { league: League; secret: string }) {
     setSyncErr(null);
     const res = await fetch("/api/admin/sync-matches", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${secret}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         league_id:   league.id,
         sport:       league.sport,
@@ -420,7 +405,6 @@ function LeagueBlock({ league, secret }: { league: League; secret: string }) {
                     key={m.id}
                     match={m}
                     sport={league.sport}
-                    secret={secret}
                     onFinished={onFinished}
                   />
                 ))}
@@ -436,7 +420,7 @@ function LeagueBlock({ league, secret }: { league: League; secret: string }) {
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
-  const [secret, setSecret]     = useState("");
+  const [loggedIn, setLoggedIn] = useState<boolean | null>(null); // null = checking
   const [input, setInput]       = useState("");
   const [authErr, setAuthErr]   = useState(false);
   const [leagues, setLeagues]   = useState<League[]>([]);
@@ -450,29 +434,41 @@ export default function AdminPage() {
     return () => { frame.style.maxWidth = prev; };
   }, []);
 
+  // Check existing session cookie on mount
+  useEffect(() => {
+    fetch("/api/admin/ping").then(async (r) => {
+      if (!r.ok) { setLoggedIn(false); return; }
+      setLoggedIn(true);
+      const { data } = await supabase
+        .from("leagues")
+        .select("*")
+        .order("created_at", { ascending: false });
+      setLeagues((data as League[]) ?? []);
+    });
+  }, []);
+
   async function login() {
     setLoading(true);
     setAuthErr(false);
-    // Verify by pinging a protected endpoint
-    const res = await fetch("/api/admin/sync-matches", {
+    const res = await fetch("/api/admin/login", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${input}`,
-      },
-      body: JSON.stringify({}),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ secret: input }),
     });
     setLoading(false);
-    // 400 = bad body but auth passed; 401 = wrong secret
-    if (res.status === 401) {
-      setAuthErr(true);
-      return;
-    }
-    setSecret(input);
-    loadLeagues();
+    if (!res.ok) { setAuthErr(true); return; }
+    setLoggedIn(true);
+    setInput("");
+    await fetchLeagues();
   }
 
-  async function loadLeagues() {
+  async function signOut() {
+    await fetch("/api/admin/login", { method: "DELETE" });
+    setLoggedIn(false);
+    setLeagues([]);
+  }
+
+  async function fetchLeagues() {
     const { data } = await supabase
       .from("leagues")
       .select("*")
@@ -480,7 +476,11 @@ export default function AdminPage() {
     setLeagues((data as League[]) ?? []);
   }
 
-  if (!secret) {
+  if (loggedIn === null) {
+    return <div className={styles.authGate}><div className={styles.authTitle}>Loading…</div></div>;
+  }
+
+  if (!loggedIn) {
     return (
       <div className={styles.authGate}>
         <div className={styles.authTitle}>Admin Panel</div>
@@ -509,11 +509,7 @@ export default function AdminPage() {
     <div className={styles.container}>
       <div className={styles.header}>
         <h1 className={styles.title}>Admin Panel</h1>
-        <button
-          type="button"
-          className={styles.signOut}
-          onClick={() => setSecret("")}
-        >
+        <button type="button" className={styles.signOut} onClick={signOut}>
           Sign out
         </button>
       </div>
@@ -522,7 +518,7 @@ export default function AdminPage() {
         <div className={styles.empty}>No leagues found</div>
       ) : (
         leagues.map((l) => (
-          <LeagueBlock key={l.id} league={l} secret={secret} />
+          <LeagueBlock key={l.id} league={l} />
         ))
       )}
     </div>

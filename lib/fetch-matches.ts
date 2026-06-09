@@ -40,12 +40,19 @@ type NbaEvent = {
   competitions: NbaCompetition[];
 };
 
+const ALLOWED_FOOTBALL_COMPETITIONS = new Set([
+  "PL", "CL", "BL1", "SA", "PD", "FL1", "PPL", "DED",
+]);
+
 export async function fetchFootballMatches(competition = "PL"): Promise<MatchRow[]> {
   const apiKey = process.env.FOOTBALL_DATA_API_KEY;
   if (!apiKey) throw new Error("FOOTBALL_DATA_API_KEY not set");
+  if (!ALLOWED_FOOTBALL_COMPETITIONS.has(competition)) {
+    throw new Error(`Unknown football competition: ${competition}`);
+  }
 
   const res = await fetch(
-    `https://api.football-data.org/v4/competitions/${competition}/matches?status=SCHEDULED`,
+    `https://api.football-data.org/v4/competitions/${encodeURIComponent(competition)}/matches?status=SCHEDULED`,
     { headers: { "X-Auth-Token": apiKey } }
   );
   if (!res.ok) throw new Error(`football-data.org error: ${res.status}`);
@@ -67,7 +74,7 @@ export async function fetchCs2Matches(tournament?: string): Promise<MatchRow[]> 
   if (!apiKey) throw new Error("PANDASCORE_API_KEY not set");
 
   const url = tournament
-    ? `https://api.pandascore.co/csgo/tournaments/${tournament}/matches?per_page=20&sort=begin_at`
+    ? `https://api.pandascore.co/csgo/tournaments/${encodeURIComponent(tournament)}/matches?per_page=20&sort=begin_at`
     : "https://api.pandascore.co/csgo/matches/upcoming?per_page=10&sort=begin_at";
 
   const res = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } });
@@ -108,7 +115,10 @@ export async function fetchNbaMatches(): Promise<MatchRow[]> {
     dates.push(d.toISOString().split("T")[0].replace(/-/g, ""));
   }
 
-  const allEvents = (await Promise.all(dates.map((d) => fetchNbaScoreboard(d)))).flat();
+  const settled = await Promise.allSettled(dates.map((d) => fetchNbaScoreboard(d)));
+  const allEvents = settled
+    .filter((r): r is PromiseFulfilledResult<NbaEvent[]> => r.status === "fulfilled")
+    .flatMap((r) => r.value);
 
   return allEvents
     .filter((e) => e.competitions[0]?.status?.type?.state !== "post")

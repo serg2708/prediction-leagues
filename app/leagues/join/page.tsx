@@ -95,7 +95,6 @@ function JoinLeagueContent() {
       if (!USE_MOCK && profileId && txHash) {
         const result = await joinLeagueAction({
           leagueId: league.id,
-          profileId,
           txHash,
         });
         if (!result.ok) {

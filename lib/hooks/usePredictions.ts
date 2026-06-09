@@ -63,7 +63,7 @@ export function usePredictions(leagueId: string | undefined, profileId: string |
 
       setSaving(true);
       try {
-        const result = await savePredictionAction(matchId, profileId, outcome);
+        const result = await savePredictionAction(matchId, outcome);
         if (!result.ok) {
           // Revert optimistic update on failure
           setPredictions((prev) => {

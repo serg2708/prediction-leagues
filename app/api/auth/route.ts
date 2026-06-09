@@ -1,5 +1,6 @@
 import { Errors, createClient } from "@farcaster/quick-auth";
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 const client = createClient();
 
@@ -43,34 +44,14 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function getUrlHost(request: NextRequest) {
-  // First try to get the origin from the Origin header
-  const origin = request.headers.get("origin");
-  if (origin) {
-    try {
-      const url = new URL(origin);
-      return url.host;
-    } catch (error) {
-      console.warn("Invalid origin header:", origin, error);
-    }
+function getUrlHost(_request: NextRequest) {
+  // Use server-side env vars exclusively — never trust Origin/Host headers
+  // for security-critical JWT domain validation (those headers are attacker-controlled).
+  if (process.env.NEXT_PUBLIC_URL) {
+    return new URL(process.env.NEXT_PUBLIC_URL).host;
   }
-
-  // Fallback to Host header
-  const host = request.headers.get("host");
-  if (host) {
-    return host;
+  if (process.env.VERCEL_URL) {
+    return process.env.VERCEL_URL; // already just the host on Vercel
   }
-
-  // Final fallback to environment variables
-  let urlValue: string;
-  if (process.env.VERCEL_ENV === "production") {
-    urlValue = process.env.NEXT_PUBLIC_URL!;
-  } else if (process.env.VERCEL_URL) {
-    urlValue = `https://${process.env.VERCEL_URL}`;
-  } else {
-    urlValue = "http://localhost:3000";
-  }
-
-  const url = new URL(urlValue);
-  return url.host;
+  return "localhost:3000";
 }

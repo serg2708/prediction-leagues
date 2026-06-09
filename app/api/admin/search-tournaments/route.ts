@@ -26,7 +26,11 @@ export async function GET(req: NextRequest) {
   const apiKey = process.env.PANDASCORE_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "PANDASCORE_API_KEY not set" }, { status: 500 });
 
-  const endpoint = sport === "cs2" ? "csgo" : sport;
+  const SPORT_TO_PANDA: Record<string, string> = { cs2: "csgo", nba: "nba" };
+  const endpoint = SPORT_TO_PANDA[sport];
+  if (!endpoint) {
+    return NextResponse.json({ error: "Invalid sport" }, { status: 400 });
+  }
   const url = `https://api.pandascore.co/${endpoint}/tournaments?search[name]=${encodeURIComponent(q)}&per_page=20&sort=begin_at`;
 
   const res = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } });

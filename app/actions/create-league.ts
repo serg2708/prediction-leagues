@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { after } from "next/server";
 import { syncLeagueMatches } from "@/app/actions/sync-matches";
 import { POOL_ADDRESS, PREDICTION_POOL_ABI, leagueIdToBytes32 } from "@/lib/contracts";
-import { isValidAddress } from "@/lib/server-auth";
+import { getSessionAddress } from "@/lib/session";
 import type { Sport } from "@/lib/types";
 import { getPublicClient } from "@/lib/viem-server";
 
@@ -21,15 +21,14 @@ export async function createLeagueAction(params: {
   entryFee: number;
   isPublic: boolean;
   minPlayers: number;
-  profileId: string;
   txHash: string;
 }): Promise<string> {
-  const { leagueUuid, name, sport, competitionId, entryFee, isPublic, minPlayers, profileId, txHash } = params;
+  // CRIT-2: Derive caller identity from server-side session
+  const profileId = await getSessionAddress();
+  if (!profileId) throw new Error("Not authenticated");
 
-  // C2: Validate caller address format
-  if (!isValidAddress(profileId)) throw new Error("Invalid profile address");
+  const { leagueUuid, name, sport, competitionId, entryFee, isPublic, minPlayers, txHash } = params;
 
-  // M7: Validate entry fee and player count
   if (!Number.isFinite(entryFee) || entryFee <= 0 || entryFee > 10_000) {
     throw new Error("Invalid entry fee");
   }

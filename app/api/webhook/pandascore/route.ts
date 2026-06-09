@@ -8,9 +8,10 @@
  * POST /api/webhook/pandascore
  * Headers: X-PandaScore-Token: <PANDASCORE_WEBHOOK_SECRET>
  */
-import { createHmac, timingSafeEqual } from "crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import type { PredictionOutcome } from "@/lib/types";
 
 const supabase = createClient(
@@ -43,18 +44,16 @@ type PandaWebhookPayload = {
 
 function verifySignature(rawBody: string, req: NextRequest): boolean {
   const secret = process.env.PANDASCORE_WEBHOOK_SECRET;
-  if (!secret) return true; // skip in local dev if not set
+  if (!secret) return false; // fail-closed: reject all if secret not configured
 
   // PandaScore sends HMAC-SHA256 in X-Signature header
   const signature = req.headers.get("x-signature") ?? req.headers.get("x-pandascore-token");
   if (!signature) return false;
 
-  const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
-  try {
-    return timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
-  } catch {
-    return false;
-  }
+  const sigBuf = Buffer.from(signature);
+  const expBuf = Buffer.from(createHmac("sha256", secret).update(rawBody).digest("hex"));
+  if (sigBuf.length !== expBuf.length) return false;
+  return timingSafeEqual(sigBuf, expBuf);
 }
 
 // ── Handler ───────────────────────────────────────────────────────────────────
@@ -94,10 +93,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, skipped: "match not in DB" });
   }
 
-  if (match.status === "finished") {
-    return NextResponse.json({ ok: true, skipped: "already finished" });
-  }
-
   // Determine outcome: team1 = home team won, team2 = away team won
   const winnerName = pandaMatch.winner?.name;
   if (!winnerName) {
@@ -105,6 +100,20 @@ export async function POST(req: NextRequest) {
   }
 
   const result: PredictionOutcome = winnerName === match.team_home ? "team1" : "team2";
+
+  // MED-6: Atomically claim this match for processing — prevents duplicate webhook delivery
+  // from racing. If 0 rows updated (already finished), bail out immediately.
+  const { data: claimed } = await supabase
+    .from("matches")
+    .update({ status: "finished" })
+    .eq("id", match.id)
+    .neq("status", "finished")
+    .select("id")
+    .single();
+
+  if (!claimed) {
+    return NextResponse.json({ ok: true, skipped: "already finished" });
+  }
 
   // Record result via the internal admin API (handles points, payout, notifications)
   const res = await fetch(`${ORIGIN}/api/matches/${match.id}/result`, {

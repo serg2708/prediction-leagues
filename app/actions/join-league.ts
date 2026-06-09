@@ -2,7 +2,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { POOL_ADDRESS, PREDICTION_POOL_ABI, leagueIdToBytes32 } from "@/lib/contracts";
-import { isValidAddress } from "@/lib/server-auth";
+import { getSessionAddress } from "@/lib/session";
 import { getPublicClient } from "@/lib/viem-server";
 
 const supabase = createClient(
@@ -12,17 +12,15 @@ const supabase = createClient(
 
 export async function joinLeagueAction(params: {
   leagueId: string;
-  profileId: string;
   txHash: string;
 }): Promise<{ ok: boolean; error?: string }> {
-  const { leagueId, profileId, txHash } = params;
+  // CRIT-2: Derive caller identity from server-side session
+  const profileId = await getSessionAddress();
+  if (!profileId) return { ok: false, error: "Not authenticated" };
 
-  // C2: Validate caller address format
-  if (!isValidAddress(profileId)) {
-    return { ok: false, error: "Invalid profile address" };
-  }
+  const { leagueId, txHash } = params;
 
-  // C4: Read entry fee from DB — never trust client-supplied amount
+  // Read entry fee from DB — never trust client-supplied amount
   const { data: leagueRow, error: leagueErr } = await supabase
     .from("leagues")
     .select("entry_fee_usdc")
@@ -52,34 +50,18 @@ export async function joinLeagueAction(params: {
     return { ok: false, error: "Could not verify on-chain deposit" };
   }
 
-  try {
-    const [depositRes, memberRes] = await Promise.all([
-      supabase.from("deposits").insert({
-        league_id: leagueId,
-        profile_id: profileId,
-        amount_usdc: entryFeeUsdc,
-        tx_hash: txHash,
-        confirmed: true,
-      }),
-      supabase.from("league_members").insert({
-        league_id: leagueId,
-        profile_id: profileId,
-        paid: true,
-      }),
-    ]);
+  // MED-2: Single RPC = one PostgreSQL transaction (deposit + member + pool increment)
+  const { error: joinErr } = await supabase.rpc("join_league", {
+    p_league_id:  leagueId,
+    p_profile_id: profileId,
+    p_tx_hash:    txHash,
+    p_amount:     entryFeeUsdc,
+  });
 
-    const insertErr = depositRes.error ?? memberRes.error;
-    if (insertErr) return { ok: false, error: insertErr.message };
-
-    // C4: Atomic pool increment using DB-read fee — no client-supplied amount
-    const { error: poolErr } = await supabase.rpc("increment_pool", {
-      p_league_id: leagueId,
-      p_amount: entryFeeUsdc,
-    });
-    if (poolErr) return { ok: false, error: poolErr.message };
-
-    return { ok: true };
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" };
+  if (joinErr) {
+    if (joinErr.code === "23505") return { ok: false, error: "already_joined" };
+    return { ok: false, error: joinErr.message };
   }
+
+  return { ok: true };
 }

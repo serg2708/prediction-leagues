@@ -11,9 +11,11 @@ const USDC_BY_CHAIN: Record<number, `0x${string}`> = {
 
 const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 84532);
 export const USDC_ADDRESS  = USDC_BY_CHAIN[CHAIN_ID] ?? (() => { throw new Error(`No USDC address for chain ${CHAIN_ID}`); })();
-export const POOL_ADDRESS  = (
-  process.env.NEXT_PUBLIC_POOL_ADDRESS ?? "0x0000000000000000000000000000000000000000"
-) as `0x${string}`;
+const _poolAddr = process.env.NEXT_PUBLIC_POOL_ADDRESS;
+if (!_poolAddr || !/^0x[0-9a-fA-F]{40}$/.test(_poolAddr)) {
+  throw new Error("NEXT_PUBLIC_POOL_ADDRESS is not set or is not a valid EVM address");
+}
+export const POOL_ADDRESS = _poolAddr as `0x${string}`;
 
 // ── ABIs ───────────────────────────────────────────────────────────────────
 
@@ -99,7 +101,9 @@ export const PREDICTION_POOL_ABI = [
 
 /**
  * Convert a Supabase UUID string to the bytes32 key used in PredictionPool.
- * Matches Solidity: keccak256(abi.encodePacked(uuid))
+ * The contract stores this value as-is (no on-chain hashing) — this function
+ * must be used consistently for ALL contract calls: createLeague, deposit,
+ * hasDeposited, payout, payoutMultiple.
  */
 export function leagueIdToBytes32(uuid: string): `0x${string}` {
   return keccak256(toHex(uuid));

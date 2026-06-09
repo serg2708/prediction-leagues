@@ -7,8 +7,21 @@
  * the Farcaster notification endpoint.
  * Protected by NOTIFY_SECRET to prevent abuse.
  */
-import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { requireNotify } from "@/lib/server-auth";
+
+const ALLOWED_NOTIFY_HOSTS = new Set(["api.warpcast.com", "notifications.farcaster.xyz"]);
+
+function isAllowedNotifyUrl(raw: string): boolean {
+  try {
+    const { protocol, hostname } = new URL(raw);
+    return protocol === "https:" && ALLOWED_NOTIFY_HOSTS.has(hostname);
+  } catch {
+    return false;
+  }
+}
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
@@ -29,11 +42,8 @@ interface TokenRow {
 }
 
 export async function POST(req: NextRequest) {
-  // Simple bearer-token auth so only our backend can call this
-  const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${process.env.NOTIFY_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = requireNotify(req);
+  if (authErr) return authErr;
 
   const { fids, title, body, targetUrl } = (await req.json()) as NotifyRequest;
   if (!fids?.length || !title || !body) {
@@ -61,6 +71,9 @@ export async function POST(req: NextRequest) {
 
   const results = await Promise.allSettled(
     Array.from(byUrl.entries()).map(async ([url, tokenRows]) => {
+      if (!isAllowedNotifyUrl(url)) {
+        throw new Error(`Blocked outbound request to disallowed host: ${url}`);
+      }
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

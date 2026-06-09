@@ -8,12 +8,11 @@
  *         score_home?: number, score_away?: number }
  */
 import { createClient } from "@supabase/supabase-js";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { createPublicClient, createWalletClient, http, isAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { base, baseSepolia } from "viem/chains";
-import { PREDICTION_POOL_ABI, POOL_ADDRESS, leagueIdToBytes32 } from "@/lib/contracts";
+import { POOL_ADDRESS, PREDICTION_POOL_ABI, leagueIdToBytes32 } from "@/lib/contracts";
 import { requireAdmin } from "@/lib/server-auth";
 
 const VALID_OUTCOMES = new Set<string>(["home", "draw", "away", "team1", "team2"]);
@@ -78,7 +77,8 @@ export async function POST(
   }
 
   // 3 — Award points (safe: match was not finished before this call)
-  await supabase.rpc("award_points", { p_match_id: matchId });
+  const { error: rpcErr } = await supabase.rpc("award_points", { p_match_id: matchId });
+  if (rpcErr) console.error("[result] award_points failed:", rpcErr.message, rpcErr.code);
 
   // 4 — Notify all league members who predicted correctly
   const { data: correctPreds } = await supabase
@@ -131,10 +131,10 @@ async function finaliseLeague(leagueId: string) {
 
   if (!updated) return; // already finished, nothing to do
 
-  // Get top score
+  // Get top score (no FK join through view — unreliable in PostgREST)
   const { data: top } = await supabase
     .from("league_leaderboard")
-    .select("profile_id, points, profiles(fid)")
+    .select("profile_id, points")
     .eq("league_id", leagueId)
     .order("rank", { ascending: true })
     .limit(1)
@@ -161,6 +161,14 @@ async function finaliseLeague(leagueId: string) {
     .eq("id", leagueId)
     .single();
 
+  // Get winner FID via direct profiles table (FK joins through views can fail)
+  const { data: winnerProfile } = await supabase
+    .from("profiles")
+    .select("fid")
+    .eq("id", top.profile_id)
+    .single();
+  const winnerFid = winnerProfile?.fid ?? null;
+
   // Notify ALL league members
   const { data: members } = await supabase
     .from("league_members")
@@ -173,9 +181,6 @@ async function finaliseLeague(leagueId: string) {
       return (Array.isArray(p) ? p[0]?.fid : p?.fid) as number | null;
     })
     .filter((f): f is number => !!f);
-
-  const topProfiles = (top.profiles as { fid: number } | { fid: number }[] | null);
-  const winnerFid = (Array.isArray(topProfiles) ? topProfiles[0]?.fid : topProfiles?.fid) as number | null;
 
   if (winnerFid) {
     const prize = isTie
@@ -206,6 +211,19 @@ async function finaliseLeague(leagueId: string) {
   }
 }
 
+/** Claim the payout slot atomically before sending the tx — prevents double-payout. */
+async function claimPayoutSlot(leagueId: string): Promise<boolean> {
+  const placeholder = "pending";
+  const { data } = await supabase
+    .from("leagues")
+    .update({ payout_tx_hash: placeholder })
+    .eq("id", leagueId)
+    .is("payout_tx_hash", null)
+    .select("id")
+    .single();
+  return !!data;
+}
+
 async function onChainPayout(leagueUuid: string, winnerAddresses: string[]) {
   const privateKey = process.env.POOL_SIGNER_PRIVATE_KEY;
   if (!privateKey) {
@@ -213,11 +231,18 @@ async function onChainPayout(leagueUuid: string, winnerAddresses: string[]) {
     return;
   }
 
+  // CRIT-4: Atomically claim the payout slot before sending any tx.
+  // If another concurrent call already claimed it, bail out immediately.
+  const claimed = await claimPayoutSlot(leagueUuid);
+  if (!claimed) {
+    console.log(`[payout] League ${leagueUuid} already claimed — skipping duplicate`);
+    return;
+  }
+
   const chainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 84532);
   const chain   = chainId === 8453 ? base : baseSepolia;
   const rpcUrl  = process.env.RPC_URL ?? chain.rpcUrls.default.http[0];
 
-  // L1: Normalize private key prefix
   const normalizedKey = (privateKey.startsWith("0x") ? privateKey : `0x${privateKey}`) as `0x${string}`;
   const account      = privateKeyToAccount(normalizedKey);
   const walletClient = createWalletClient({ account, chain, transport: http(rpcUrl) });
@@ -242,8 +267,15 @@ async function onChainPayout(leagueUuid: string, winnerAddresses: string[]) {
         });
 
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    // Persist the confirmed tx hash so the slot is permanently locked
+    await supabase
+      .from("leagues")
+      .update({ payout_tx_hash: receipt.transactionHash })
+      .eq("id", leagueUuid);
     console.log(`Payout tx confirmed: ${receipt.transactionHash}`);
   } catch (err) {
+    // Release the slot so the next cron run can retry
+    await supabase.from("leagues").update({ payout_tx_hash: null }).eq("id", leagueUuid);
     console.error("On-chain payout failed:", err);
   }
 }

@@ -1,8 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
-
 import { upsertProfileAction } from "@/app/actions/upsert-profile";
 import type { Profile } from "@/lib/types";
 
@@ -33,7 +32,14 @@ export function useProfile() {
       const avatarUrl = context?.user?.pfpUrl ?? undefined;
       const fid = context?.user?.fid ?? undefined;
 
-      await upsertProfileAction({ id: profileId as string, displayName, avatarUrl, fid });
+      // Establish HttpOnly session cookie so server actions can verify the caller
+      await fetch("/api/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address: profileId }),
+      });
+
+      await upsertProfileAction({ displayName, avatarUrl, fid });
       setProfile({ id: profileId as string, display_name: displayName, avatar_url: avatarUrl });
     }
 

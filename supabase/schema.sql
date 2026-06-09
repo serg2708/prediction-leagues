@@ -32,6 +32,10 @@ create table leagues (
   pool_usdc       numeric(10,2) not null default 0,
   creator_id      text not null references profiles(id),
   invite_code     text not null unique default upper(substring(gen_random_uuid()::text, 1, 6)),
+  competition_id  text,
+  min_players     int not null default 2,
+  is_public       boolean not null default true,
+  payout_tx_hash  text,
   created_at      timestamptz not null default now()
 );
 
@@ -47,17 +51,19 @@ create table league_members (
 
 -- ── Matches ────────────────────────────────────────────────
 create table matches (
-  id          uuid primary key default gen_random_uuid(),
-  league_id   uuid not null references leagues(id) on delete cascade,
-  team_home   text not null,
-  team_away   text not null,
-  sport       sport_type not null,
-  starts_at   timestamptz not null,
-  status      match_status not null default 'upcoming',
-  score_home  int,
-  score_away  int,
-  result      prediction_outcome,    -- set after the match ends
-  created_at  timestamptz not null default now()
+  id                  uuid primary key default gen_random_uuid(),
+  league_id           uuid not null references leagues(id) on delete cascade,
+  team_home           text not null,
+  team_away           text not null,
+  sport               sport_type not null,
+  starts_at           timestamptz not null,
+  status              match_status not null default 'upcoming',
+  score_home          int,
+  score_away          int,
+  result              prediction_outcome,
+  external_id         text,
+  points_distributed  boolean not null default false,
+  created_at          timestamptz not null default now()
 );
 
 -- ── Predictions ────────────────────────────────────────────
@@ -105,7 +111,7 @@ join profiles p on p.id = lm.profile_id;
 
 -- Called after a match finishes: award 10 pts to correct predictions
 create or replace function award_points(p_match_id uuid)
-returns void language plpgsql as $$
+returns void language plpgsql security definer as $$
 declare
   v_result prediction_outcome;
   v_league_id uuid;

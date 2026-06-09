@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@supabase/supabase-js";
-import { isValidAddress } from "@/lib/server-auth";
+import { getSessionAddress } from "@/lib/session";
 import type { PredictionOutcome } from "@/lib/types";
 
 const supabase = createClient(
@@ -11,15 +11,12 @@ const supabase = createClient(
 
 export async function savePredictionAction(
   matchId: string,
-  profileId: string,
   outcome: PredictionOutcome
 ): Promise<{ ok: boolean; error?: string }> {
-  // C2: Validate address format
-  if (!isValidAddress(profileId)) {
-    return { ok: false, error: "Invalid profile address" };
-  }
+  // CRIT-1: Derive caller identity from server-side session — never trust client-supplied profileId
+  const profileId = await getSessionAddress();
+  if (!profileId) return { ok: false, error: "not_authenticated" };
 
-  // Fetch match along with its league_id in one query
   const { data: match } = await supabase
     .from("matches")
     .select("status, league_id")

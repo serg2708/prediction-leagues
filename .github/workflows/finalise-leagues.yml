@@ -1,0 +1,16 @@
+name: Finalise Leagues
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  finalise:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger finalise-leagues cron
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.NEXT_PUBLIC_URL }}/api/cron/finalise-leagues"

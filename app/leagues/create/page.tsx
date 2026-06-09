@@ -100,7 +100,6 @@ export default function CreateLeaguePage() {
           entryFee: registeredFee,
           isPublic: form.isPublic,
           minPlayers: form.minPlayers,
-          profileId,
           txHash,
         });
         router.push(`/leagues/${finalId}`);
