@@ -91,6 +91,24 @@ create table deposits (
 );
 
 -- ─────────────────────────────────────────────────────────────
+-- Indexes for hot query paths
+-- ─────────────────────────────────────────────────────────────
+
+-- Dedup + upsert target for synced matches
+create unique index if not exists matches_league_id_external_id_key
+  on matches (league_id, external_id);
+
+create index if not exists idx_league_members_profile on league_members (profile_id);
+create index if not exists idx_predictions_profile    on predictions (profile_id);
+create index if not exists idx_matches_league_starts  on matches (league_id, starts_at);
+create index if not exists idx_matches_status_starts  on matches (status, starts_at);
+create index if not exists idx_matches_external        on matches (external_id);
+create index if not exists idx_deposits_league         on deposits (league_id);
+create index if not exists idx_leagues_status          on leagues (status);
+create index if not exists idx_leagues_discover        on leagues (is_public, created_at);
+create index if not exists idx_leagues_needs_refund    on leagues (needs_refund) where needs_refund;
+
+-- ─────────────────────────────────────────────────────────────
 -- Views
 -- ─────────────────────────────────────────────────────────────
 
