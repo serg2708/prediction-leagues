@@ -11,6 +11,13 @@ jobs:
     steps:
       - name: Trigger notify-upcoming cron
         run: |
-          curl -s -o /dev/null -w "%{http_code}" \
+          response=$(curl -s -w "\n%{http_code}" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "${{ secrets.NEXT_PUBLIC_URL }}/api/cron/notify-upcoming"
+            "${{ secrets.NEXT_PUBLIC_URL }}/api/cron/notify-upcoming")
+          code=$(echo "$response" | tail -n1)
+          echo "HTTP $code"
+          echo "$response" | sed '$d'
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            echo "::error::Cron returned $code"
+            exit 1
+          fi
