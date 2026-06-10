@@ -19,12 +19,18 @@ export async function savePredictionAction(
 
   const { data: match } = await supabase
     .from("matches")
-    .select("status, league_id")
+    .select("status, league_id, starts_at")
     .eq("id", matchId)
     .single();
 
   if (!match || match.status !== "upcoming") {
     return { ok: false, error: "match_not_upcoming" };
+  }
+
+  // HIGH: lock predictions at kickoff — status only flips to "finished" ~105min
+  // after start, so a status check alone lets users predict mid-match.
+  if (new Date(match.starts_at).getTime() <= Date.now()) {
+    return { ok: false, error: "match_started" };
   }
 
   // C5: Verify caller is a paid member of this league

@@ -115,7 +115,18 @@ returns void language plpgsql security definer as $$
 declare
   v_result prediction_outcome;
   v_league_id uuid;
+  v_claimed int;
 begin
+  -- Idempotency guard — claim this match atomically so concurrent calls
+  -- can't double-award points.
+  update matches
+  set points_distributed = true
+  where id = p_match_id and points_distributed = false;
+  get diagnostics v_claimed = row_count;
+  if v_claimed = 0 then
+    return; -- already distributed, skip silently
+  end if;
+
   select result, league_id into v_result, v_league_id
   from matches where id = p_match_id;
 

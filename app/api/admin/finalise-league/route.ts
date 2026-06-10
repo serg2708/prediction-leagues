@@ -150,6 +150,27 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // MED: claim the payout slot atomically so this path can't race the
+  // result-endpoint payout (UPDATE … WHERE payout_tx_hash IS NULL).
+  const { data: claimed } = await supabase
+    .from("leagues")
+    .update({ payout_tx_hash: "pending" })
+    .eq("id", league_id)
+    .is("payout_tx_hash", null)
+    .select("id")
+    .single();
+
+  if (!claimed) {
+    return NextResponse.json({
+      ok: true,
+      isTie,
+      winners: validWinners.map((w) => w.profile_id),
+      winnerName: isTie ? `${validWinners.length} tied players` : top.display_name,
+      points: top.points,
+      payout: "skipped — already paid out",
+    });
+  }
+
   try {
     const chainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 84532);
     const chain   = chainId === 8453 ? base : baseSepolia;
@@ -179,8 +200,12 @@ export async function POST(req: NextRequest) {
 
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
     txHash = receipt.transactionHash;
+    // Persist the confirmed hash so the slot stays permanently locked
+    await supabase.from("leagues").update({ payout_tx_hash: txHash }).eq("id", league_id);
     console.log(`[finalise-league] Payout tx: ${txHash}`);
   } catch (err) {
+    // Release the claimed slot so a later run can retry
+    await supabase.from("leagues").update({ payout_tx_hash: null }).eq("id", league_id);
     console.error("[finalise-league] On-chain payout failed:", err);
     return NextResponse.json({
       ok: false,
