@@ -303,6 +303,7 @@ function LeagueBlock({ league, onDeleted }: { league: League; onDeleted: (id: st
             <div className={styles.leagueMeta}>
               {league.invite_code} · ${league.pool_usdc} pool · {league.status}
               {league.competition_id && <> · <span style={{ color: "#aaa" }}>{league.competition_id}</span></>}
+              {league.needs_refund && <> · <span style={{ color: "#ff9500", fontWeight: 600 }}>⚠ NEEDS REFUND</span></>}
             </div>
           </div>
         </div>

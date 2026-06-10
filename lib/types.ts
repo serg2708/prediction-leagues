@@ -24,6 +24,7 @@ export interface League {
   competition_id?: string;
   is_public: boolean;
   min_players: number;
+  needs_refund?: boolean;
   members?: LeagueMember[];
 }
 

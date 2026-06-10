@@ -47,12 +47,33 @@ export async function POST(req: NextRequest) {
   // Verify league exists
   const { data: league, error: leagueErr } = await supabase
     .from("leagues")
-    .select("id, name, pool_usdc, status")
+    .select("id, name, pool_usdc, status, min_players")
     .eq("id", league_id)
     .single();
 
   if (leagueErr || !league) {
     return NextResponse.json({ error: "League not found" }, { status: 404 });
+  }
+
+  // #1: Enforce min_players — void under-filled leagues instead of paying out
+  const { count: paidCount } = await supabase
+    .from("league_members")
+    .select("profile_id", { count: "exact", head: true })
+    .eq("league_id", league_id)
+    .eq("paid", true);
+
+  if ((paidCount ?? 0) < (league.min_players ?? 2)) {
+    await supabase
+      .from("leagues")
+      .update({ status: "finished", needs_refund: true })
+      .eq("id", league_id);
+    return NextResponse.json({
+      ok: true,
+      voided: true,
+      reason: "under_min_players",
+      paidCount: paidCount ?? 0,
+      minPlayers: league.min_players,
+    });
   }
 
   // Get top score

@@ -126,10 +126,24 @@ async function finaliseLeague(leagueId: string) {
     .update({ status: "finished" })
     .eq("id", leagueId)
     .neq("status", "finished")
-    .select("id")
+    .select("id, min_players")
     .single();
 
   if (!updated) return; // already finished, nothing to do
+
+  // #1: Enforce min_players — if the league never reached its minimum paid
+  // player count, void it and flag for refund instead of paying a "winner".
+  const { count: paidCount } = await supabase
+    .from("league_members")
+    .select("profile_id", { count: "exact", head: true })
+    .eq("league_id", leagueId)
+    .eq("paid", true);
+
+  if ((paidCount ?? 0) < (updated.min_players ?? 2)) {
+    await supabase.from("leagues").update({ needs_refund: true }).eq("id", leagueId);
+    console.log(`[finaliseLeague] League ${leagueId} under min_players (${paidCount}/${updated.min_players}) — flagged for refund, no payout`);
+    return;
+  }
 
   // Get top score (no FK join through view — unreliable in PostgREST)
   const { data: top } = await supabase
