@@ -4,23 +4,6 @@ import { cookies } from "next/headers";
 const SESSION_SECRET = process.env.SESSION_SECRET ?? process.env.ADMIN_SECRET ?? "";
 const SESSION_MAX_AGE = 60 * 60 * 24; // 24 hours
 
-/** How long a signed sign-in message stays valid (replay window). */
-export const SIGNIN_TTL_MS = 5 * 60 * 1000; // 5 minutes
-
-/**
- * Canonical sign-in message the wallet must sign to prove ownership.
- * Includes the address and an issue timestamp so the server can reject
- * stale signatures. Must match byte-for-byte on client and server.
- */
-export function buildSignInMessage(address: string, issuedAt: number): string {
-  return [
-    "Prediction Leagues — sign in to verify wallet ownership.",
-    "",
-    `Address: ${address.toLowerCase()}`,
-    `Issued At: ${issuedAt}`,
-  ].join("\n");
-}
-
 /** Create a signed session token for a wallet address. */
 export function createSessionToken(address: string): string {
   const lower = address.toLowerCase();

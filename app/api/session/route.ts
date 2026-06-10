@@ -10,7 +10,8 @@
  */
 import { type NextRequest, NextResponse } from "next/server";
 import { isValidAddress } from "@/lib/server-auth";
-import { buildSignInMessage, createSessionToken, SIGNIN_TTL_MS } from "@/lib/session";
+import { createSessionToken } from "@/lib/session";
+import { buildSignInMessage, SIGNIN_TTL_MS } from "@/lib/signin-message";
 import { getPublicClient } from "@/lib/viem-server";
 
 const SESSION_MAX_AGE = 60 * 60 * 24; // 24 hours

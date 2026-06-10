@@ -3,7 +3,7 @@ import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { useEffect, useState } from "react";
 import { useAccount, useSignMessage } from "wagmi";
 import { upsertProfileAction } from "@/app/actions/upsert-profile";
-import { buildSignInMessage } from "@/lib/session";
+import { buildSignInMessage } from "@/lib/signin-message";
 import type { Profile } from "@/lib/types";
 
 const USE_MOCK = !process.env.NEXT_PUBLIC_SUPABASE_URL;
