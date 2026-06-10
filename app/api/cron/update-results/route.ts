@@ -213,6 +213,22 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  console.log(`[cron/update-results] updated=${updated.length} skipped=${skipped.length}`);
-  return NextResponse.json({ ok: true, updated: updated.length, skipped: skipped.length });
+  // #3: Retire phantom matches that never resolve. A match started >24h ago
+  // and still unresolved (after ~96 poll attempts) is abandoned so it stops
+  // blocking its league from finalising.
+  const abandonCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { data: abandoned } = await supabase
+    .from("matches")
+    .update({ status: "abandoned" })
+    .in("status", ["upcoming", "live"])
+    .lt("starts_at", abandonCutoff)
+    .select("id");
+
+  console.log(`[cron/update-results] updated=${updated.length} skipped=${skipped.length} abandoned=${abandoned?.length ?? 0}`);
+  return NextResponse.json({
+    ok: true,
+    updated: updated.length,
+    skipped: skipped.length,
+    abandoned: abandoned?.length ?? 0,
+  });
 }

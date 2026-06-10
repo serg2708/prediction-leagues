@@ -28,10 +28,16 @@ export async function GET(req: NextRequest) {
 
   const now = new Date().toISOString();
 
+  // A league with no finished match this many days after creation is
+  // considered dead (off-season ghost, mis-configured competition) and is
+  // voided for refund so its pool isn't locked forever.
+  const STALE_LEAGUE_DAYS = 14;
+  const staleBefore = new Date(Date.now() - STALE_LEAGUE_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
   // All active/pending leagues
   const { data: leagues, error } = await supabase
     .from("leagues")
-    .select("id, name, sport, ends_at, competition_id")
+    .select("id, name, sport, ends_at, competition_id, created_at")
     .in("status", ["active", "pending"]);
 
   if (error || !leagues?.length) {
@@ -92,7 +98,18 @@ export async function GET(req: NextRequest) {
       .limit(1);
 
     if (!finished?.length) {
-      results.push({ leagueId: league.id, ok: false, skipped: "no finished matches yet" });
+      // No pending and no finished matches. If the league is old enough that
+      // it's clearly never going to produce results, void it for refund so
+      // its pool doesn't stay locked indefinitely.
+      if (league.created_at && league.created_at < staleBefore) {
+        await supabase
+          .from("leagues")
+          .update({ status: "finished", needs_refund: true })
+          .eq("id", league.id);
+        results.push({ leagueId: league.id, ok: false, skipped: "voided — stale, no results" });
+      } else {
+        results.push({ leagueId: league.id, ok: false, skipped: "no finished matches yet" });
+      }
       continue;
     }
 

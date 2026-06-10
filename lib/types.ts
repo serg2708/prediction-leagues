@@ -1,6 +1,6 @@
 export type Sport = "football" | "cs2" | "nba";
 export type LeagueStatus = "active" | "finished" | "pending";
-export type MatchStatus = "upcoming" | "live" | "finished";
+export type MatchStatus = "upcoming" | "live" | "finished" | "abandoned";
 export type PredictionOutcome = "home" | "draw" | "away" | "team1" | "team2";
 
 export interface Profile {

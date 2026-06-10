@@ -9,7 +9,7 @@ create extension if not exists "pgcrypto";
 -- ── Types ──────────────────────────────────────────────────
 create type sport_type       as enum ('football', 'cs2', 'nba');
 create type league_status    as enum ('pending', 'active', 'finished');
-create type match_status     as enum ('upcoming', 'live', 'finished');
+create type match_status     as enum ('upcoming', 'live', 'finished', 'abandoned');
 create type prediction_outcome as enum ('home', 'draw', 'away', 'team1', 'team2');
 
 -- ── Profiles ───────────────────────────────────────────────
