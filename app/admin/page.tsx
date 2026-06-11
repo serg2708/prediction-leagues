@@ -169,6 +169,30 @@ function LeagueBlock({ league, onDeleted }: { league: League; onDeleted: (id: st
   const [regErr, setRegErr]     = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [delErr, setDelErr]     = useState<string | null>(null);
+  const [refunding, setRefunding] = useState(false);
+  const [refundMsg, setRefundMsg] = useState<string | null>(null);
+  const [refundErr, setRefundErr] = useState<string | null>(null);
+  const [refunded, setRefunded]   = useState(false);
+
+  async function refundLeague() {
+    if (!confirm(`Refund all paid players of "${league.name}"? Returns each entry fee (the 5% platform fee is not refundable).`)) return;
+    setRefunding(true);
+    setRefundMsg(null);
+    setRefundErr(null);
+    const res = await fetch("/api/admin/refund-league", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ league_id: league.id }),
+    });
+    const json = await res.json() as { ok?: boolean; refunded?: number; txHash?: string; error?: string };
+    setRefunding(false);
+    if (json.ok) {
+      setRefunded(true);
+      setRefundMsg(`Refunded ${json.refunded ?? 0} players${json.txHash ? ` · tx: ${json.txHash.slice(0, 10)}…` : ""}`);
+    } else {
+      setRefundErr(json.error ?? "Error");
+    }
+  }
 
   async function registerOnChain() {
     setRegistering(true);
@@ -356,6 +380,22 @@ function LeagueBlock({ league, onDeleted }: { league: League; onDeleted: (id: st
               ⚠ Last payout failed: {league.payout_error.slice(0, 80)}
             </span>
           )}
+        </div>
+      )}
+
+      {(league.needs_refund || refunded) && (
+        <div className={styles.syncRow}>
+          <button
+            type="button"
+            className={styles.syncBtn}
+            style={{ background: "#ff9500" }}
+            disabled={refunding || refunded}
+            onClick={refundLeague}
+          >
+            {refunded ? "✓ Refunded" : refunding ? "Refunding…" : "↩ Refund players"}
+          </button>
+          {refundMsg && <span className={styles.syncMsg}>{refundMsg}</span>}
+          {refundErr && <span className={styles.syncErr}>{refundErr}</span>}
         </div>
       )}
 

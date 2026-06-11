@@ -32,6 +32,7 @@ contract PredictionPoolFee {
         uint256 pool;
         uint96  entryFee;
         bool    paid;
+        bool    voided;   // refund in progress / done — payout permanently blocked
         mapping(address => bool) deposited;
     }
 
@@ -43,6 +44,7 @@ contract PredictionPoolFee {
     event Deposited(bytes32 indexed leagueId, address indexed player, uint256 poolAmount, uint256 fee);
     event Payout(bytes32 indexed leagueId, address indexed winner, uint256 amount);
     event PayoutMultiple(bytes32 indexed leagueId, address[] winners, uint256 shareEach);
+    event Refunded(bytes32 indexed leagueId, address indexed player, uint256 amount);
     event OwnershipTransferred(address indexed prev, address indexed next);
     event FeeRecipientUpdated(address indexed prev, address indexed next);
 
@@ -87,7 +89,7 @@ contract PredictionPoolFee {
         if (winner == address(0)) revert ZeroAddress();
         League storage league = leagues[leagueId];
         if (league.entryFee == 0)      revert LeagueNotFound();
-        if (league.paid)               revert AlreadyPaid();
+        if (league.paid || league.voided) revert AlreadyPaid();
         if (!league.deposited[winner]) revert NotDepositor();
 
         uint256 amount = league.pool;
@@ -105,8 +107,8 @@ contract PredictionPoolFee {
     function payoutMultiple(bytes32 leagueId, address[] calldata winners) external onlyOwner {
         if (winners.length == 0) revert EmptyWinners();
         League storage league = leagues[leagueId];
-        if (league.entryFee == 0) revert LeagueNotFound();
-        if (league.paid)          revert AlreadyPaid();
+        if (league.entryFee == 0)         revert LeagueNotFound();
+        if (league.paid || league.voided) revert AlreadyPaid();
 
         for (uint256 i = 0; i < winners.length; i++) {
             if (winners[i] == address(0))        revert ZeroAddress();
@@ -125,6 +127,42 @@ contract PredictionPoolFee {
         for (uint256 i = 0; i < winners.length; i++) {
             uint256 amount = (i == winners.length - 1) ? share + remainder : share;
             if (!usdc.transfer(winners[i], amount)) revert TransferFailed();
+        }
+    }
+
+    /**
+     * @notice Refund depositors of a voided league (e.g. under min players or
+     *         dead/off-season). Returns each player's pool contribution
+     *         (entryFee). The 5% platform fee taken at deposit is NOT refundable
+     *         here — it already left the contract to feeRecipient.
+     *
+     *         Safe to call in batches: `voided` is set on the first call so
+     *         payout can never run, and each player's `deposited` flag is
+     *         cleared on refund to prevent double refunds.
+     *
+     * @param players Addresses to refund (backend supplies the depositor list).
+     */
+    function refund(bytes32 leagueId, address[] calldata players) external onlyOwner {
+        League storage league = leagues[leagueId];
+        if (league.entryFee == 0) revert LeagueNotFound();
+        if (league.paid)          revert AlreadyPaid();
+
+        league.voided = true;
+
+        for (uint256 i = 0; i < players.length; i++) {
+            address p = players[i];
+            // Skip non-depositors and anyone already refunded
+            if (!league.deposited[p]) continue;
+            league.deposited[p] = false;
+
+            uint256 amount = league.entryFee;
+            if (amount > league.pool) amount = league.pool; // guard last-cent rounding
+            league.pool -= amount;
+
+            emit Refunded(leagueId, p, amount);
+            if (amount > 0) {
+                if (!usdc.transfer(p, amount)) revert TransferFailed();
+            }
         }
     }
 
@@ -181,5 +219,9 @@ contract PredictionPoolFee {
 
     function isPaid(bytes32 leagueId) external view returns (bool) {
         return leagues[leagueId].paid;
+    }
+
+    function isVoided(bytes32 leagueId) external view returns (bool) {
+        return leagues[leagueId].voided;
     }
 }

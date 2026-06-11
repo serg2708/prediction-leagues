@@ -75,6 +75,16 @@ export const PREDICTION_POOL_ABI = [
     stateMutability: "nonpayable",
   },
   {
+    name: "refund",
+    type: "function" as const,
+    inputs: [
+      { name: "leagueId", type: "bytes32" },
+      { name: "players",  type: "address[]" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
     name: "hasDeposited",
     type: "function" as const,
     inputs: [{ name: "leagueId", type: "bytes32" }, { name: "player", type: "address" }],
