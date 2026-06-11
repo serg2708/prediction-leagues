@@ -55,3 +55,7 @@ slither-report*
 
 # Local dev notes (not for repo)
 NOTES.md
+
+# Solidity build artifacts
+*_sol_*.bin
+*.bin
