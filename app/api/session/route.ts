@@ -9,6 +9,7 @@
  * address they don't control.
  */
 import { type NextRequest, NextResponse } from "next/server";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { isValidAddress } from "@/lib/server-auth";
 import { createSessionToken } from "@/lib/session";
 import { buildSignInMessage, SIGNIN_TTL_MS } from "@/lib/signin-message";
@@ -17,6 +18,16 @@ import { getPublicClient } from "@/lib/viem-server";
 const SESSION_MAX_AGE = 60 * 60 * 24; // 24 hours
 
 export async function POST(req: NextRequest) {
+  // Each call may trigger an on-chain verifyMessage (smart wallets), so cap
+  // per-IP attempts. Legit flow is one signature per wallet connect.
+  const { allowed, retryAfter } = rateLimit(`session:${clientIp(req)}`, 10, 60_000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(retryAfter) } }
+    );
+  }
+
   const { address, signature, issuedAt } = (await req.json()) as {
     address?: string;
     signature?: string;
