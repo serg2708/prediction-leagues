@@ -1,6 +1,9 @@
 /**
- * Cron: notify league members 60 minutes before a match starts.
- * Runs every 30 minutes — finds matches starting in 30-90 min.
+ * Cron: nudge league members who have NOT yet predicted a match starting soon.
+ * Members who already made their prediction are not notified (no spam).
+ *
+ * Runs hourly; the [+30, +90) minute window partitions cleanly across hourly
+ * runs, so each match triggers exactly one nudge sweep.
  *
  * GET /api/cron/notify-upcoming
  * Authorization: Bearer <CRON_SECRET>
@@ -30,7 +33,7 @@ export async function GET(req: NextRequest) {
     .select("id, team_home, team_away, league_id, starts_at")
     .eq("status", "upcoming")
     .gte("starts_at", from)
-    .lte("starts_at", to);
+    .lt("starts_at", to);
 
   if (!matches?.length) {
     return NextResponse.json({ notified: 0 });
@@ -39,14 +42,25 @@ export async function GET(req: NextRequest) {
   let notified = 0;
 
   for (const match of matches) {
-    const { data: members } = await supabase
-      .from("league_members")
-      .select("profile_id, profiles(fid)")
-      .eq("league_id", match.league_id);
+    const [{ data: members }, { data: preds }] = await Promise.all([
+      supabase
+        .from("league_members")
+        .select("profile_id, profiles(fid)")
+        .eq("league_id", match.league_id)
+        .eq("paid", true),
+      supabase
+        .from("predictions")
+        .select("profile_id")
+        .eq("match_id", match.id),
+    ]);
 
+    const predicted = new Set((preds ?? []).map((p) => p.profile_id as string));
+
+    // Nudge only members who haven't predicted this match yet
     const fids = (members ?? [])
+      .filter((m) => !predicted.has(m.profile_id as string))
       .map((m) => {
-        const p = (m as { profiles: { fid: number } | { fid: number }[] }).profiles;
+        const p = (m as unknown as { profiles: { fid: number } | { fid: number }[] }).profiles;
         return (Array.isArray(p) ? p[0]?.fid : p?.fid) as number | null;
       })
       .filter((f): f is number => !!f);
@@ -66,8 +80,8 @@ export async function GET(req: NextRequest) {
       },
       body: JSON.stringify({
         fids,
-        title: "Match starting soon",
-        body: `${match.team_home} vs ${match.team_away} in ~${minutesUntil} min — make your prediction!`,
+        title: "Don't miss your prediction ⏰",
+        body: `${match.team_home} vs ${match.team_away} starts in ~${minutesUntil} min and you haven't predicted yet!`,
         targetUrl: `${ORIGIN}/leagues/${match.league_id}`,
       }),
     });

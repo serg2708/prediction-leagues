@@ -2,7 +2,9 @@ name: Notify Upcoming Matches
 
 on:
   schedule:
-    - cron: "0 */2 * * *"
+    # Hourly — the route's [+30, +90) min window partitions cleanly across
+    # hourly runs so every match gets exactly one nudge sweep.
+    - cron: "0 * * * *"
   workflow_dispatch:
 
 jobs:
