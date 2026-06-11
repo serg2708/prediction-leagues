@@ -14,6 +14,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { requireCron } from "@/lib/server-auth";
+import { syncLeaguesGrouped } from "@/lib/sync-leagues";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
@@ -46,6 +47,18 @@ export async function GET(req: NextRequest) {
 
   const results: { leagueId: string; ok: boolean; winner?: string; skipped?: string; error?: string }[] = [];
 
+  // Pull fresh matches from the APIs before deciding — avoids premature
+  // finalization when only a subset of competition matches have been synced.
+  // Grouped: one external call per unique (sport, competition), best-effort.
+  const syncTargets = leagues.filter(
+    (l) => l.competition_id && !(l.ends_at && l.ends_at > now)
+  );
+  if (syncTargets.length) {
+    try {
+      await syncLeaguesGrouped(syncTargets);
+    } catch { /* best-effort — don't block finalization on sync failure */ }
+  }
+
   for (const league of leagues) {
     // Skip if ends_at is in the future (fixed-date leagues)
     if (league.ends_at && league.ends_at > now) {
@@ -57,23 +70,6 @@ export async function GET(req: NextRequest) {
     if (!league.ends_at && !league.competition_id) {
       results.push({ leagueId: league.id, ok: false, skipped: "no end condition" });
       continue;
-    }
-
-    // Pull fresh matches from the API before deciding — avoids premature finalization
-    // when only a subset of competition matches have been synced so far.
-    if (league.competition_id) {
-      await fetch(`${ORIGIN}/api/admin/sync-matches`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization:  `Bearer ${process.env.ADMIN_SECRET}`,
-        },
-        body: JSON.stringify({
-          league_id:   league.id,
-          sport:       league.sport,
-          competition: league.competition_id,
-        }),
-      }).catch(() => { /* best-effort — don't block finalization on sync failure */ });
     }
 
     // Check for any unfinished matches (after the fresh sync above)

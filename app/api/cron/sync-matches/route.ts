@@ -9,15 +9,12 @@ import { createClient } from "@supabase/supabase-js";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { requireCron } from "@/lib/server-auth";
+import { syncLeaguesGrouped, type SyncLeagueRef } from "@/lib/sync-leagues";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
   process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
 );
-
-const ORIGIN = process.env.NEXT_PUBLIC_URL ?? "http://localhost:3000";
-
-type League = { id: string; sport: string; competition_id: string | null };
 
 export async function GET(req: NextRequest) {
   const authErr = requireCron(req);
@@ -34,29 +31,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: true, synced: 0 });
   }
 
-  const results: { leagueId: string; inserted: number; error?: string }[] = [];
+  // One external API call per unique (sport, competition) — not per league
+  const synced = await syncLeaguesGrouped(leagues as SyncLeagueRef[]);
 
-  for (const league of leagues as League[]) {
-    const res = await fetch(`${ORIGIN}/api/admin/sync-matches`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization:  `Bearer ${process.env.ADMIN_SECRET}`,
-      },
-      body: JSON.stringify({
-        league_id:   league.id,
-        sport:       league.sport,
-        competition: league.competition_id,
-      }),
-    });
-
-    const json = await res.json() as { ok?: boolean; inserted?: number; error?: string };
-    results.push({
-      leagueId: league.id,
-      inserted: json.inserted ?? 0,
-      ...(json.error ? { error: json.error } : {}),
-    });
-  }
+  const results = Object.entries(synced).map(([leagueId, r]) => ({
+    leagueId,
+    inserted: r.inserted,
+    ...(r.error ? { error: r.error } : {}),
+  }));
 
   const totalInserted = results.reduce((s, r) => s + r.inserted, 0);
   console.log(`[cron/sync-matches] synced ${results.length} leagues, +${totalInserted} matches`);
