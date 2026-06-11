@@ -284,12 +284,16 @@ async function onChainPayout(leagueUuid: string, winnerAddresses: string[]) {
     // Persist the confirmed tx hash so the slot is permanently locked
     await supabase
       .from("leagues")
-      .update({ payout_tx_hash: receipt.transactionHash })
+      .update({ payout_tx_hash: receipt.transactionHash, payout_error: null })
       .eq("id", leagueUuid);
     console.log(`Payout tx confirmed: ${receipt.transactionHash}`);
   } catch (err) {
-    // Release the slot so the next cron run can retry
-    await supabase.from("leagues").update({ payout_tx_hash: null }).eq("id", leagueUuid);
+    // Release the slot so the next cron run can retry; persist the error so
+    // the admin panel surfaces the failure instead of it dying in logs.
+    await supabase
+      .from("leagues")
+      .update({ payout_tx_hash: null, payout_error: String(err).slice(0, 500) })
+      .eq("id", leagueUuid);
     console.error("On-chain payout failed:", err);
   }
 }

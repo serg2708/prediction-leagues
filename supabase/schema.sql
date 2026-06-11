@@ -36,6 +36,7 @@ create table leagues (
   min_players     int not null default 2,
   is_public       boolean not null default true,
   payout_tx_hash  text,
+  payout_error    text,
   needs_refund    boolean not null default false,
   created_at      timestamptz not null default now()
 );

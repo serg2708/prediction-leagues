@@ -351,6 +351,11 @@ function LeagueBlock({ league, onDeleted }: { league: League; onDeleted: (id: st
           </button>
           {payMsg && <span className={styles.syncMsg}>{payMsg}</span>}
           {payErr && <span className={styles.syncErr}>{payErr}</span>}
+          {league.payout_error && !payMsg && (
+            <span className={styles.syncErr} title={league.payout_error}>
+              ⚠ Last payout failed: {league.payout_error.slice(0, 80)}
+            </span>
+          )}
         </div>
       )}
 

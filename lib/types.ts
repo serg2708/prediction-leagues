@@ -25,6 +25,7 @@ export interface League {
   is_public: boolean;
   min_players: number;
   needs_refund?: boolean;
+  payout_error?: string | null;
   members?: LeagueMember[];
 }
 

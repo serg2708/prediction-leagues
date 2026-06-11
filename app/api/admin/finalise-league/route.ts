@@ -222,11 +222,18 @@ export async function POST(req: NextRequest) {
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
     txHash = receipt.transactionHash;
     // Persist the confirmed hash so the slot stays permanently locked
-    await supabase.from("leagues").update({ payout_tx_hash: txHash }).eq("id", league_id);
+    await supabase
+      .from("leagues")
+      .update({ payout_tx_hash: txHash, payout_error: null })
+      .eq("id", league_id);
     console.log(`[finalise-league] Payout tx: ${txHash}`);
   } catch (err) {
-    // Release the claimed slot so a later run can retry
-    await supabase.from("leagues").update({ payout_tx_hash: null }).eq("id", league_id);
+    // Release the claimed slot so a later run can retry; persist the error
+    // so the admin panel can surface it instead of it dying in logs.
+    await supabase
+      .from("leagues")
+      .update({ payout_tx_hash: null, payout_error: String(err).slice(0, 500) })
+      .eq("id", league_id);
     console.error("[finalise-league] On-chain payout failed:", err);
     return NextResponse.json({
       ok: false,
