@@ -312,6 +312,57 @@
   font-variant-numeric: tabular-nums;
 }
 
+.memberNameCol {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.memberStatsRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.formDots {
+  display: flex;
+  gap: 3px;
+}
+
+.formDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.formDotOk  { background: #2ecc71; }
+.formDotBad { background: #e74c3c; }
+
+.memberAccuracy {
+  font-size: 10.5px;
+  color: var(--fg-2);
+  font-family: var(--font-mono, monospace);
+  font-variant-numeric: tabular-nums;
+}
+
+.streakBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 149, 0, 0.12);
+  border: 1px solid rgba(255, 149, 0, 0.35);
+  color: #ff9500;
+  font-size: 10.5px;
+  font-weight: 700;
+  font-family: var(--font-mono, monospace);
+  flex-shrink: 0;
+}
+
 /* ── Floating CTA ────────────────────────────────────────── */
 .floatingCta {
   position: fixed;

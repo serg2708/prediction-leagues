@@ -5,6 +5,7 @@ import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { useLeague } from "@/lib/hooks/useLeague";
 import { usePredictions } from "@/lib/hooks/usePredictions";
 import { useProfile } from "@/lib/hooks/useProfile";
+import { type MemberStats, useStandingsStats } from "@/lib/hooks/useStandingsStats";
 import type { Match, LeagueMember, PredictionOutcome } from "@/lib/types";
 import { ChevronLeft, ChevronRight, Check, XMark, Clock, SportIcon, Medal } from "@/app/components/Icons";
 import matchStyles from "@/app/components/MatchCard.module.css";
@@ -117,7 +118,17 @@ function MatchCard({
   );
 }
 
-function MemberRow({ member, index, isMe }: { member: LeagueMember; index: number; isMe?: boolean }) {
+function MemberRow({
+  member,
+  index,
+  isMe,
+  stats,
+}: {
+  member: LeagueMember;
+  index: number;
+  isMe?: boolean;
+  stats?: MemberStats;
+}) {
   const name = member.profile?.display_name ?? member.profile_id.slice(0, 8);
   const initials = name.slice(0, 2).toUpperCase();
   return (
@@ -126,9 +137,32 @@ function MemberRow({ member, index, isMe }: { member: LeagueMember; index: numbe
         {index < 3 ? <Medal rank={(index + 1) as 1 | 2 | 3} size={20} /> : `#${index + 1}`}
       </span>
       <div className={`${styles.memberAvatar} ${isMe ? styles.memberAvatarMe : ""}`}>{initials}</div>
-      <div className={styles.memberNameBlock}>
-        <span className={styles.memberName}>{name}</span>
-        {isMe && <span className={styles.memberYouBadge}>You</span>}
+      <div className={styles.memberNameCol}>
+        <div className={styles.memberNameBlock}>
+          <span className={styles.memberName}>{name}</span>
+          {isMe && <span className={styles.memberYouBadge}>You</span>}
+          {stats && stats.streak >= 2 && (
+            <span className={styles.streakBadge} title={`${stats.streak} correct in a row`}>
+              🔥{stats.streak}
+            </span>
+          )}
+        </div>
+        {stats && stats.total > 0 && (
+          <div className={styles.memberStatsRow}>
+            <span className={styles.formDots}>
+              {stats.form.map((ok, i) => (
+                <span
+                  // biome-ignore lint/suspicious/noArrayIndexKey: order is the identity here
+                  key={i}
+                  className={`${styles.formDot} ${ok ? styles.formDotOk : styles.formDotBad}`}
+                />
+              ))}
+            </span>
+            <span className={styles.memberAccuracy}>
+              {stats.correct}/{stats.total} correct
+            </span>
+          </div>
+        )}
       </div>
       <span className={styles.memberPoints}>{member.points} pts</span>
     </div>
@@ -142,6 +176,7 @@ export default function LeaguePage() {
   const { profileId } = useProfile();
   const { league, matches, members, loading } = useLeague(id);
   const { predictions, predict } = usePredictions(id, profileId ?? undefined);
+  const standingsStats = useStandingsStats(id, matches);
   const [activeTab, setActiveTab] = useState<"matches" | "standings" | "history">("matches");
   const [copied, setCopied] = useState(false);
 
@@ -309,7 +344,13 @@ export default function LeaguePage() {
         {activeTab === "standings" && (
           <div className={styles.standings}>
             {members.map((m, i) => (
-              <MemberRow key={m.profile_id} member={m} index={i} isMe={!!profileId && m.profile_id === profileId} />
+              <MemberRow
+                key={m.profile_id}
+                member={m}
+                index={i}
+                isMe={!!profileId && m.profile_id === profileId}
+                stats={standingsStats[m.profile_id]}
+              />
             ))}
           </div>
         )}
