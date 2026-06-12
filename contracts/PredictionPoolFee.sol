@@ -44,6 +44,7 @@ contract PredictionPoolFee {
     event Deposited(bytes32 indexed leagueId, address indexed player, uint256 poolAmount, uint256 fee);
     event Payout(bytes32 indexed leagueId, address indexed winner, uint256 amount);
     event PayoutMultiple(bytes32 indexed leagueId, address[] winners, uint256 shareEach);
+    event PayoutSplit(bytes32 indexed leagueId, address[] winners, uint16[] sharesBps);
     event Refunded(bytes32 indexed leagueId, address indexed player, uint256 amount);
     event OwnershipTransferred(address indexed prev, address indexed next);
     event FeeRecipientUpdated(address indexed prev, address indexed next);
@@ -58,6 +59,7 @@ contract PredictionPoolFee {
     error AlreadyPaid();
     error TransferFailed();
     error NotDepositor();
+    error BadShares();
 
     // ── Modifiers ──────────────────────────────────────────────────────────
 
@@ -127,6 +129,50 @@ contract PredictionPoolFee {
         for (uint256 i = 0; i < winners.length; i++) {
             uint256 amount = (i == winners.length - 1) ? share + remainder : share;
             if (!usdc.transfer(winners[i], amount)) revert TransferFailed();
+        }
+    }
+
+    /**
+     * @notice Pay the pool out across multiple winners with explicit shares in
+     *         basis points (must sum to exactly 10_000). Generalises payout /
+     *         payoutMultiple: winner-take-all is [winner],[10000]; an N-way tie
+     *         is equal shares; a podium is e.g. [6000,3000,1000]. Rounding dust
+     *         goes to the last winner so the pool is always fully drained.
+     */
+    function payoutSplit(
+        bytes32 leagueId,
+        address[] calldata winners,
+        uint16[] calldata sharesBps
+    ) external onlyOwner {
+        if (winners.length == 0)                revert EmptyWinners();
+        if (winners.length != sharesBps.length) revert BadShares();
+        League storage league = leagues[leagueId];
+        if (league.entryFee == 0)         revert LeagueNotFound();
+        if (league.paid || league.voided) revert AlreadyPaid();
+
+        uint256 totalBps;
+        for (uint256 i = 0; i < winners.length; i++) {
+            if (winners[i] == address(0))      revert ZeroAddress();
+            if (!league.deposited[winners[i]]) revert NotDepositor();
+            totalBps += sharesBps[i];
+        }
+        if (totalBps != 10_000) revert BadShares();
+
+        uint256 total = league.pool;
+        league.paid = true;
+        league.pool = 0;
+
+        emit PayoutSplit(leagueId, winners, sharesBps);
+
+        uint256 distributed;
+        for (uint256 i = 0; i < winners.length; i++) {
+            uint256 amount = (i == winners.length - 1)
+                ? total - distributed
+                : (total * sharesBps[i]) / 10_000;
+            distributed += amount;
+            if (amount > 0) {
+                if (!usdc.transfer(winners[i], amount)) revert TransferFailed();
+            }
         }
     }
 

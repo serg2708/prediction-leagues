@@ -14,6 +14,7 @@ import { createPublicClient, createWalletClient, http, isAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { base, baseSepolia } from "viem/chains";
 import { PREDICTION_POOL_ABI, POOL_ADDRESS, leagueIdToBytes32 } from "@/lib/contracts";
+import { computePayoutShares } from "@/lib/payout-shares";
 import { requireAdmin } from "@/lib/server-auth";
 
 const supabase = createClient(
@@ -76,35 +77,32 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Get top score
-  const { data: topOne } = await supabase
+  // Full leaderboard, ordered
+  const { data: ranked } = await supabase
     .from("league_leaderboard")
     .select("profile_id, points, display_name")
     .eq("league_id", league_id)
-    .order("rank", { ascending: true })
-    .limit(1)
-    .single();
+    .order("rank", { ascending: true });
 
-  if (!topOne) {
+  if (!ranked?.length) {
     return NextResponse.json({ error: "No members found" }, { status: 400 });
   }
 
-  // Find all members tied at the top score
-  const { data: allTop } = await supabase
-    .from("league_leaderboard")
-    .select("profile_id, points, display_name")
-    .eq("league_id", league_id)
-    .eq("points", topOne.points);
-
-  const winners = allTop ?? [topOne];
+  const top     = ranked[0];
+  const winners = ranked.filter((w) => w.points === top.points);
   const isTie   = winners.length > 1;
-  const top      = topOne;
 
   // M5: Validate all winner addresses before attempting payout
   const validWinners = winners.filter((w) => isAddress(w.profile_id as string));
   if (validWinners.length === 0) {
     return NextResponse.json({ error: "No valid winner addresses" }, { status: 400 });
   }
+
+  // Podium (60/30/10) for 4+ payable players, winner-take-all / tie otherwise
+  const payable = ranked.filter((w) => isAddress(w.profile_id as string));
+  const { winners: payoutWinners, sharesBps } = computePayoutShares(
+    payable.map((w) => ({ profile_id: w.profile_id as string, points: w.points as number }))
+  );
 
   // Mark league finished if not already
   if (league.status !== "finished") {
@@ -205,19 +203,13 @@ export async function POST(req: NextRequest) {
     const walletClient = createWalletClient({ account, chain, transport: http(rpcUrl) });
     const publicClient = createPublicClient({ chain, transport: http(rpcUrl) });
 
-    const hash = isTie
-      ? await walletClient.writeContract({
-          address: POOL_ADDRESS,
-          abi: PREDICTION_POOL_ABI,
-          functionName: "payoutMultiple",
-          args: [leagueBytes32, validWinners.map((w) => w.profile_id as `0x${string}`)],
-        })
-      : await walletClient.writeContract({
-          address: POOL_ADDRESS,
-          abi: PREDICTION_POOL_ABI,
-          functionName: "payout",
-          args: [leagueBytes32, top.profile_id as `0x${string}`],
-        });
+    // payoutSplit covers every case: winner-take-all, tie split, podium
+    const hash = await walletClient.writeContract({
+      address: POOL_ADDRESS,
+      abi: PREDICTION_POOL_ABI,
+      functionName: "payoutSplit",
+      args: [leagueBytes32, payoutWinners as `0x${string}`[], sharesBps],
+    });
 
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
     txHash = receipt.transactionHash;

@@ -13,6 +13,7 @@ import { createPublicClient, createWalletClient, http, isAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { base, baseSepolia } from "viem/chains";
 import { POOL_ADDRESS, PREDICTION_POOL_ABI, leagueIdToBytes32 } from "@/lib/contracts";
+import { computePayoutShares } from "@/lib/payout-shares";
 import { requireAdmin } from "@/lib/server-auth";
 
 const VALID_OUTCOMES = new Set<string>(["home", "draw", "away", "team1", "team2"]);
@@ -145,28 +146,27 @@ async function finaliseLeague(leagueId: string) {
     return;
   }
 
-  // Get top score (no FK join through view — unreliable in PostgREST)
-  const { data: top } = await supabase
+  // Full leaderboard (no FK join through view — unreliable in PostgREST)
+  const { data: ranked } = await supabase
     .from("league_leaderboard")
     .select("profile_id, points")
     .eq("league_id", leagueId)
-    .order("rank", { ascending: true })
-    .limit(1)
-    .single();
+    .order("rank", { ascending: true });
 
-  if (!top) return;
+  if (!ranked?.length) return;
 
-  // Find all members tied at the top score
-  const { data: allTop } = await supabase
-    .from("league_leaderboard")
-    .select("profile_id, points")
-    .eq("league_id", leagueId)
-    .eq("points", top.points);
+  const top = ranked[0];
 
-  const allWinners = allTop ?? [top];
-  // M5: Filter out any non-EVM addresses before payout
-  const winners = allWinners.filter((w) => isAddress(w.profile_id as string));
-  const isTie   = winners.length > 1;
+  // M5: Filter out any non-EVM addresses before payout, keep leaderboard order
+  const payable = ranked.filter((w) => isAddress(w.profile_id as string));
+  // Podium (60/30/10) for 4+ players, winner-take-all / tie-split otherwise
+  const { winners: payoutWinners, sharesBps } = computePayoutShares(
+    payable.map((w) => ({ profile_id: w.profile_id as string, points: w.points as number }))
+  );
+
+  const topWinners = ranked.filter((w) => w.points === top.points);
+  const isTie      = topWinners.length > 1;
+  const winners    = topWinners.filter((w) => isAddress(w.profile_id as string));
 
   // Get pool amount for notification
   const { data: league } = await supabase
@@ -220,8 +220,8 @@ async function finaliseLeague(leagueId: string) {
     );
   }
 
-  if (winners.length > 0) {
-    await onChainPayout(leagueId, winners.map((w) => w.profile_id as string));
+  if (payoutWinners.length > 0) {
+    await onChainPayout(leagueId, payoutWinners, sharesBps);
   }
 }
 
@@ -238,7 +238,7 @@ async function claimPayoutSlot(leagueId: string): Promise<boolean> {
   return !!data;
 }
 
-async function onChainPayout(leagueUuid: string, winnerAddresses: string[]) {
+async function onChainPayout(leagueUuid: string, winnerAddresses: string[], sharesBps: number[]) {
   const privateKey = process.env.POOL_SIGNER_PRIVATE_KEY;
   if (!privateKey) {
     console.warn("POOL_SIGNER_PRIVATE_KEY not set — skipping on-chain payout");
@@ -265,20 +265,14 @@ async function onChainPayout(leagueUuid: string, winnerAddresses: string[]) {
   const leagueBytes32 = leagueIdToBytes32(leagueUuid);
 
   try {
-    const isTie = winnerAddresses.length > 1;
-    const hash = isTie
-      ? await walletClient.writeContract({
-          address:      POOL_ADDRESS,
-          abi:          PREDICTION_POOL_ABI,
-          functionName: "payoutMultiple",
-          args:         [leagueBytes32, winnerAddresses as `0x${string}`[]],
-        })
-      : await walletClient.writeContract({
-          address:      POOL_ADDRESS,
-          abi:          PREDICTION_POOL_ABI,
-          functionName: "payout",
-          args:         [leagueBytes32, winnerAddresses[0] as `0x${string}`],
-        });
+    // payoutSplit covers every case: [winner],[10000] = winner-take-all,
+    // equal shares = tie, 60/30/10 = podium (computed by computePayoutShares)
+    const hash = await walletClient.writeContract({
+      address:      POOL_ADDRESS,
+      abi:          PREDICTION_POOL_ABI,
+      functionName: "payoutSplit",
+      args:         [leagueBytes32, winnerAddresses as `0x${string}`[], sharesBps],
+    });
 
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
     // Persist the confirmed tx hash so the slot is permanently locked

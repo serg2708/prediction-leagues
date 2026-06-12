@@ -75,6 +75,17 @@ export const PREDICTION_POOL_ABI = [
     stateMutability: "nonpayable",
   },
   {
+    name: "payoutSplit",
+    type: "function" as const,
+    inputs: [
+      { name: "leagueId",  type: "bytes32" },
+      { name: "winners",   type: "address[]" },
+      { name: "sharesBps", type: "uint16[]" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
     name: "refund",
     type: "function" as const,
     inputs: [
@@ -105,6 +116,7 @@ export const PREDICTION_POOL_ABI = [
   { name: "AlreadyPaid",   type: "error" as const, inputs: [] },
   { name: "TransferFailed", type: "error" as const, inputs: [] },
   { name: "NotDepositor",  type: "error" as const, inputs: [] },
+  { name: "BadShares",     type: "error" as const, inputs: [] },
 ] as const;
 
 // ── Helpers ────────────────────────────────────────────────────────────────
