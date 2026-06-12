@@ -261,3 +261,65 @@
   font-size: 12px;
   color: var(--fg-ghost);
 }
+
+/* ── Discover controls ───────────────────────────────────── */
+.discoverControls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.discoverSearch {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  color: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.discoverSearch:focus {
+  border-color: var(--border-accent);
+}
+
+.discoverChipsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.discoverChips {
+  display: flex;
+  gap: 6px;
+}
+
+.discoverChip {
+  padding: 5px 12px;
+  border-radius: var(--r-pill, 999px);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  color: var(--fg-2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.discoverChipActive {
+  background: var(--accent-bg);
+  border-color: var(--border-accent);
+  color: var(--accent);
+}
+
+.discoverSort {
+  padding: 5px 8px;
+  border-radius: 10px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  color: var(--fg-2);
+  font-size: 12px;
+  outline: none;
+}

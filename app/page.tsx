@@ -2,10 +2,11 @@
 import { useDiscoverLeagues } from "@/lib/hooks/useDiscoverLeagues";
 import { useLeagues } from "@/lib/hooks/useLeagues";
 import { useProfile } from "@/lib/hooks/useProfile";
+import type { Sport } from "@/lib/types";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BottomNav } from "./components/BottomNav";
 import { DiscoverCard, FinishedCard, LeagueCard, SkeletonCard } from "./components/LeagueCard";
 import { Bolt, Flag, Search, Trophy } from "./components/Icons";
@@ -19,6 +20,21 @@ export default function Home() {
   const { leagues, loading } = useLeagues(profileId ?? undefined);
   const { leagues: discover, loading: discoverLoading } = useDiscoverLeagues(profileId ?? undefined);
   const [tab, setTab] = useState<"my" | "live" | "discover" | "finished">("my");
+  const [discoverQ, setDiscoverQ] = useState("");
+  const [discoverSport, setDiscoverSport] = useState<Sport | "all">("all");
+  const [discoverSort, setDiscoverSort] = useState<"new" | "pool" | "players">("new");
+
+  const discoverFiltered = useMemo(() => {
+    const q = discoverQ.trim().toLowerCase();
+    const filtered = discover.filter(
+      (l) =>
+        (discoverSport === "all" || l.sport === discoverSport) &&
+        (q === "" || l.name.toLowerCase().includes(q))
+    );
+    if (discoverSort === "pool")    return [...filtered].sort((a, b) => Number(b.pool_usdc) - Number(a.pool_usdc));
+    if (discoverSort === "players") return [...filtered].sort((a, b) => b.members_count - a.members_count);
+    return filtered; // already newest-first from the hook
+  }, [discover, discoverQ, discoverSport, discoverSort]);
 
   useEffect(() => {
     if (!isMiniAppReady) setMiniAppReady();
@@ -161,22 +177,61 @@ export default function Home() {
               />
             ))
           )
-        ) : discoverLoading ? (
-          [1, 2].map((n) => <SkeletonCard key={n} />)
-        ) : discover.length === 0 ? (
-          <div className={styles.empty}>
-            <Search size={32} />
-            <p>No open leagues</p>
-            <p className={styles.emptyHint}>Be the first to create one!</p>
-          </div>
         ) : (
-          discover.map((league) => (
-            <DiscoverCard
-              key={league.id}
-              league={league}
-              onJoin={(code) => router.push(`/leagues/join?code=${code}`)}
-            />
-          ))
+          <>
+            <div className={styles.discoverControls}>
+              <input
+                className={styles.discoverSearch}
+                type="search"
+                placeholder="Search leagues…"
+                value={discoverQ}
+                onChange={(e) => setDiscoverQ(e.target.value)}
+              />
+              <div className={styles.discoverChipsRow}>
+                <div className={styles.discoverChips}>
+                  {(["all", "football", "cs2", "nba"] as const).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      className={`${styles.discoverChip} ${discoverSport === s ? styles.discoverChipActive : ""}`}
+                      onClick={() => setDiscoverSport(s)}
+                    >
+                      {s === "all" ? "All" : s.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+                <select
+                  className={styles.discoverSort}
+                  value={discoverSort}
+                  onChange={(e) => setDiscoverSort(e.target.value as "new" | "pool" | "players")}
+                >
+                  <option value="new">Newest</option>
+                  <option value="pool">Biggest pool</option>
+                  <option value="players">Most players</option>
+                </select>
+              </div>
+            </div>
+
+            {discoverLoading ? (
+              [1, 2].map((n) => <SkeletonCard key={n} />)
+            ) : discoverFiltered.length === 0 ? (
+              <div className={styles.empty}>
+                <Search size={32} />
+                <p>{discover.length === 0 ? "No open leagues" : "Nothing matches your filters"}</p>
+                <p className={styles.emptyHint}>
+                  {discover.length === 0 ? "Be the first to create one!" : "Try a different sport or search"}
+                </p>
+              </div>
+            ) : (
+              discoverFiltered.map((league) => (
+                <DiscoverCard
+                  key={league.id}
+                  league={league}
+                  onJoin={(code) => router.push(`/leagues/join?code=${code}`)}
+                />
+              ))
+            )}
+          </>
         )}
       </div>
 

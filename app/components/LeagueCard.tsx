@@ -80,7 +80,13 @@ export function LeagueCard({ league, onView }: { league: LeagueWithStats; onView
   );
 }
 
-export function DiscoverCard({ league, onJoin }: { league: League; onJoin: (code: string) => void }) {
+export function DiscoverCard({
+  league,
+  onJoin,
+}: {
+  league: League & { members_count?: number };
+  onJoin: (code: string) => void;
+}) {
   return (
     <div className={styles.card}>
       <div className={styles.top}>
@@ -94,6 +100,11 @@ export function DiscoverCard({ league, onJoin }: { league: League; onJoin: (code
           <div className={styles.status}>
             <span className={styles.statusLabel}>{league.sport.toUpperCase()}</span>
             <span className={styles.statusText}>{league.status}</span>
+            {league.members_count !== undefined && (
+              <span className={styles.statusText}>
+                · {league.members_count} player{league.members_count !== 1 ? "s" : ""}
+              </span>
+            )}
           </div>
         </div>
         <div className={styles.pool}>

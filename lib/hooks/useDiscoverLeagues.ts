@@ -1,13 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import { MOCK_LEAGUES, MOCK_MEMBERS } from "@/lib/mock";
+import { supabase } from "@/lib/supabase";
 import type { League } from "@/lib/types";
 
 const USE_MOCK = !process.env.NEXT_PUBLIC_SUPABASE_URL;
 
+export type DiscoverLeague = League & { members_count: number };
+
 export function useDiscoverLeagues(profileId: string | undefined) {
-  const [leagues, setLeagues]   = useState<League[]>([]);
+  const [leagues, setLeagues]   = useState<DiscoverLeague[]>([]);
   const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
@@ -20,14 +22,18 @@ export function useDiscoverLeagues(profileId: string | undefined) {
               .filter((l) => (MOCK_MEMBERS[l.id] ?? []).some((m) => m.profile_id === profileId))
               .map((l) => l.id)
           );
-          setLeagues(MOCK_LEAGUES.filter((l) => !joined.has(l.id)));
+          setLeagues(
+            MOCK_LEAGUES
+              .filter((l) => !joined.has(l.id))
+              .map((l) => ({ ...l, members_count: (MOCK_MEMBERS[l.id] ?? []).length }))
+          );
           return;
         }
 
-        // All non-finished public leagues
+        // All non-finished public leagues, with member counts for trending sort
         const { data: all } = await supabase
           .from("leagues")
-          .select("*")
+          .select("*, league_members(count)")
           .neq("status", "finished")
           .eq("is_public", true)
           .order("created_at", { ascending: false });
@@ -44,7 +50,14 @@ export function useDiscoverLeagues(profileId: string | undefined) {
           for (const r of mine ?? []) joinedIds.add(r.league_id as string);
         }
 
-        setLeagues((all as League[]).filter((l) => !joinedIds.has(l.id)));
+        const rows = (all as (League & { league_members?: { count: number }[] })[])
+          .filter((l) => !joinedIds.has(l.id))
+          .map(({ league_members, ...l }) => ({
+            ...l,
+            members_count: league_members?.[0]?.count ?? 0,
+          }));
+
+        setLeagues(rows as DiscoverLeague[]);
       } finally {
         setLoading(false);
       }
