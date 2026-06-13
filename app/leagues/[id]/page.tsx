@@ -19,14 +19,17 @@ function outcomeLabel(outcome: PredictionOutcome, match: Match): string {
 }
 
 function sportOutcomes(sport: string): PredictionOutcome[] {
-  if (sport === "cs2")      return ["team1", "team2"];
+  // NBA uses team1/team2 — must match what update-results/admin record,
+  // otherwise predictions never compare equal to results
+  if (sport === "cs2" || sport === "nba") return ["team1", "team2"];
   if (sport === "football") return ["home", "draw", "away"];
-  return ["home", "away"];
+  return ["team1", "team2"];
 }
 
 function formatMatchTime(startsAt: string, status: string): string {
   if (status === "live") return "LIVE";
   if (status === "finished") return "Finished";
+  if (status === "abandoned") return "Voided";
   const d = new Date(startsAt);
   const now = new Date();
   const diffH = Math.floor((d.getTime() - now.getTime()) / 3600000);
@@ -93,8 +96,10 @@ function MatchCard({
         {sportOutcomes(match.sport).map((outcome) => {
           const label = outcomeLabel(outcome, match);
           const isSelected = myPrediction === outcome;
-          const isCorrect  = match.result === outcome && locked;
-          const isWrong    = isSelected && locked && match.result !== outcome;
+          // Only mark correct/wrong when a result actually exists — a locked
+          // match without a result (live/abandoned) must not paint picks red
+          const isCorrect  = !!match.result && match.result === outcome && locked;
+          const isWrong    = isSelected && locked && !!match.result && match.result !== outcome;
           return (
             <button
               key={outcome}
@@ -222,6 +227,12 @@ export default function LeaguePage() {
   const minPlayers = league.min_players ?? 2;
   const waitingForPlayers = members.length < minPlayers;
 
+  // Predictable = still open. Voided (abandoned) matches move to History, not
+  // the Matches tab, so they don't masquerade as predictable.
+  const openMatches    = matches.filter((m) => m.status === "upcoming" || m.status === "live");
+  const pastMatches    = matches.filter((m) => m.status === "finished" || m.status === "abandoned");
+  const hasPredictable = matches.some((m) => m.status === "upcoming");
+
   return (
     <div className={styles.container}>
       <header className={styles.header}>
@@ -310,7 +321,7 @@ export default function LeaguePage() {
         </button>
       </div>
 
-      {matches.some((m) => m.status !== "finished") && !waitingForPlayers && (
+      {hasPredictable && !waitingForPlayers && activeTab !== "matches" && (
         <div className={styles.floatingCta}>
           <button
             type="button"
@@ -324,18 +335,16 @@ export default function LeaguePage() {
 
       <div className={styles.content}>
         {activeTab === "matches" && (
-          matches.filter((m) => m.status !== "finished").length > 0 ? (
-            matches
-              .filter((m) => m.status !== "finished")
-              .map((match) => (
-                <MatchCard
-                  key={match.id}
-                  match={match}
-                  myPrediction={predictions[match.id]?.outcome}
-                  onPredict={predict}
-                  locked={waitingForPlayers}
-                />
-              ))
+          openMatches.length > 0 ? (
+            openMatches.map((match) => (
+              <MatchCard
+                key={match.id}
+                match={match}
+                myPrediction={predictions[match.id]?.outcome}
+                onPredict={predict}
+                locked={waitingForPlayers}
+              />
+            ))
           ) : (
             <p className={styles.empty}>No upcoming matches</p>
           )
@@ -356,40 +365,46 @@ export default function LeaguePage() {
         )}
 
         {activeTab === "history" && (
-          matches.filter((m) => m.status === "finished").length === 0 ? (
+          pastMatches.length === 0 ? (
             <p className={styles.empty}>No finished matches yet</p>
           ) : (
-            matches
-              .filter((m) => m.status === "finished")
-              .map((match) => {
-                const pred    = predictions[match.id];
-                const correct = pred && match.result === pred.outcome;
-                return (
-                  <div key={match.id} className={styles.historyRow}>
-                    <div className={`${styles.historyIcon} ${
-                      !pred ? styles.historyNoPred :
-                      correct ? styles.historyCorrect : styles.historyWrong
-                    }`}>
-                      {!pred ? "—" : correct ? <Check /> : <XMark />}
-                    </div>
-                    <div className={styles.historyInfo}>
-                      <p className={styles.historyMatch}>
-                        {match.team_home} vs {match.team_away}
-                      </p>
-                      <p className={styles.historyMeta}>
-                        Result: <strong>{match.result ? outcomeLabel(match.result, match) : "?"}</strong>
-                        {pred && <> · Your pick: <strong>{outcomeLabel(pred.outcome, match)}</strong></>}
-                        {match.score_home != null && (
-                          <> · {match.score_home}–{match.score_away}</>
-                        )}
-                      </p>
-                    </div>
-                    <span className={correct ? styles.historyPts : styles.historyPtsZero}>
-                      {!pred ? "no pick" : correct ? "+10 pts" : "0 pts"}
-                    </span>
+            pastMatches.map((match) => {
+              const voided  = match.status === "abandoned";
+              const pred    = predictions[match.id];
+              const correct = !voided && pred && match.result === pred.outcome;
+              return (
+                <div key={match.id} className={styles.historyRow}>
+                  <div className={`${styles.historyIcon} ${
+                    voided ? styles.historyNoPred :
+                    !pred ? styles.historyNoPred :
+                    correct ? styles.historyCorrect : styles.historyWrong
+                  }`}>
+                    {voided ? "—" : !pred ? "—" : correct ? <Check /> : <XMark />}
                   </div>
-                );
-              })
+                  <div className={styles.historyInfo}>
+                    <p className={styles.historyMatch}>
+                      {match.team_home} vs {match.team_away}
+                    </p>
+                    <p className={styles.historyMeta}>
+                      {voided ? (
+                        <em>Voided — no result</em>
+                      ) : (
+                        <>
+                          Result: <strong>{match.result ? outcomeLabel(match.result, match) : "?"}</strong>
+                          {pred && <> · Your pick: <strong>{outcomeLabel(pred.outcome, match)}</strong></>}
+                          {match.score_home != null && (
+                            <> · {match.score_home}–{match.score_away}</>
+                          )}
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  <span className={correct ? styles.historyPts : styles.historyPtsZero}>
+                    {voided ? "voided" : !pred ? "no pick" : correct ? "+10 pts" : "0 pts"}
+                  </span>
+                </div>
+              );
+            })
           )
         )}
       </div>
