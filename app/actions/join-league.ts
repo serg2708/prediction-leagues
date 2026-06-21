@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@supabase/supabase-js";
+import { decodeEventLog } from "viem";
 import { POOL_ADDRESS, PREDICTION_POOL_ABI, leagueIdToBytes32 } from "@/lib/contracts";
 import { getSessionAddress } from "@/lib/session";
 import { getPublicClient } from "@/lib/viem-server";
@@ -33,18 +34,40 @@ export async function joinLeagueAction(params: {
 
   const entryFeeUsdc: number = leagueRow.entry_fee_usdc;
 
-  // C3: Verify deposit on-chain before recording it in the DB
+  // Verify the deposit tx itself was made BY this session wallet FOR this
+  // league. Checking only hasDeposited(league, sessionAddr) is too weak: if the
+  // wallet that actually paid differs from the session (e.g. account switched),
+  // the deposit gets misattributed and the real payer is left out of the league.
   try {
     const publicClient = getPublicClient();
-    const leagueBytes32 = leagueIdToBytes32(leagueId);
-    const deposited = await publicClient.readContract({
-      address: POOL_ADDRESS,
-      abi: PREDICTION_POOL_ABI,
-      functionName: "hasDeposited",
-      args: [leagueBytes32, profileId as `0x${string}`],
-    });
-    if (!deposited) {
-      return { ok: false, error: "On-chain deposit not confirmed" };
+    const leagueBytes32 = leagueIdToBytes32(leagueId).toLowerCase();
+    const receipt = await publicClient.getTransactionReceipt({ hash: txHash as `0x${string}` });
+
+    if (receipt.status !== "success") {
+      return { ok: false, error: "Deposit transaction failed" };
+    }
+
+    let matched = false;
+    for (const log of receipt.logs) {
+      if (log.address.toLowerCase() !== POOL_ADDRESS.toLowerCase()) continue;
+      try {
+        const ev = decodeEventLog({ abi: PREDICTION_POOL_ABI, data: log.data, topics: log.topics });
+        if (
+          ev.eventName === "Deposited" &&
+          (ev.args.leagueId as string).toLowerCase() === leagueBytes32 &&
+          (ev.args.player as string).toLowerCase() === profileId.toLowerCase()
+        ) {
+          matched = true;
+          break;
+        }
+      } catch {
+        // not a Deposited log — skip
+      }
+    }
+
+    if (!matched) {
+      // Deposit wasn't made by the connected wallet for this league
+      return { ok: false, error: "deposit_wallet_mismatch" };
     }
   } catch {
     return { ok: false, error: "Could not verify on-chain deposit" };

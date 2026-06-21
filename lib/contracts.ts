@@ -109,6 +109,17 @@ export const PREDICTION_POOL_ABI = [
     outputs: [{ type: "uint256" }],
     stateMutability: "view",
   },
+  {
+    name: "Deposited",
+    type: "event" as const,
+    inputs: [
+      { name: "leagueId",   type: "bytes32", indexed: true },
+      { name: "player",     type: "address", indexed: true },
+      { name: "poolAmount", type: "uint256", indexed: false },
+      { name: "fee",        type: "uint256", indexed: false },
+    ],
+    anonymous: false,
+  },
   { name: "NotOwner",      type: "error" as const, inputs: [] },
   { name: "LeagueNotFound", type: "error" as const, inputs: [] },
   { name: "AlreadyDeposited", type: "error" as const, inputs: [] },
