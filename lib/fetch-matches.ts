@@ -41,7 +41,7 @@ type NbaEvent = {
 };
 
 const ALLOWED_FOOTBALL_COMPETITIONS = new Set([
-  "PL", "CL", "BL1", "SA", "PD", "FL1", "PPL", "DED",
+  "WC", "CL", "PL", "PD", "SA", "BL1", "FL1", "PPL", "DED", "EC",
 ]);
 
 export async function fetchFootballMatches(competition = "PL"): Promise<MatchRow[]> {

@@ -6,11 +6,12 @@ import type { League, Match, PredictionOutcome, Sport } from "@/lib/types";
 import styles from "./page.module.css";
 
 const FOOTBALL_COMPETITIONS = [
-  { value: "PL",  label: "Premier League" },
+  { value: "WC",  label: "World Cup 2026" },
   { value: "CL",  label: "Champions League" },
-  { value: "BL1", label: "Bundesliga" },
-  { value: "SA",  label: "Serie A" },
+  { value: "PL",  label: "Premier League" },
   { value: "PD",  label: "La Liga" },
+  { value: "SA",  label: "Serie A" },
+  { value: "BL1", label: "Bundesliga" },
   { value: "FL1", label: "Ligue 1" },
 ];
 
