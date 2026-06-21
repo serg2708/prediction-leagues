@@ -11,11 +11,18 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { isValidAddress } from "@/lib/server-auth";
-import { createSessionToken } from "@/lib/session";
+import { createSessionToken, getSessionAddress } from "@/lib/session";
 import { buildSignInMessage, SIGNIN_TTL_MS } from "@/lib/signin-message";
 import { getPublicClient } from "@/lib/viem-server";
 
 const SESSION_MAX_AGE = 60 * 60 * 24; // 24 hours
+
+/** GET /api/session — returns the verified address if a valid cookie exists.
+ * Lets the client skip a redundant signature prompt when already signed in. */
+export async function GET() {
+  const address = await getSessionAddress();
+  return NextResponse.json({ address });
+}
 
 export async function POST(req: NextRequest) {
   // Each call may trigger an on-chain verifyMessage (smart wallets), so cap
