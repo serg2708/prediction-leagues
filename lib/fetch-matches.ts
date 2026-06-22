@@ -58,15 +58,21 @@ export async function fetchFootballMatches(competition = "PL"): Promise<MatchRow
   if (!res.ok) throw new Error(`football-data.org error: ${res.status}`);
   const json = (await res.json()) as { matches: FootballMatch[] };
 
-  return json.matches.slice(0, 50).map((m) => ({
-    team_home:   m.homeTeam.shortName ?? m.homeTeam.name,
-    team_away:   m.awayTeam.shortName ?? m.awayTeam.name,
-    sport:       "football" as const,
-    starts_at:   m.utcDate,
-    status:      "upcoming" as const,
-    external_id: String(m.id),
-    competition,
-  }));
+  return json.matches
+    // Cup knockout fixtures can be scheduled before teams are decided
+    // (homeTeam/awayTeam name is null) — skip them so the NOT NULL upsert
+    // doesn't reject the whole batch. They get picked up once teams are set.
+    .filter((m) => (m.homeTeam?.shortName ?? m.homeTeam?.name) && (m.awayTeam?.shortName ?? m.awayTeam?.name))
+    .slice(0, 50)
+    .map((m) => ({
+      team_home:   m.homeTeam.shortName ?? m.homeTeam.name,
+      team_away:   m.awayTeam.shortName ?? m.awayTeam.name,
+      sport:       "football" as const,
+      starts_at:   m.utcDate,
+      status:      "upcoming" as const,
+      external_id: String(m.id),
+      competition,
+    }));
 }
 
 export async function fetchCs2Matches(tournament?: string): Promise<MatchRow[]> {

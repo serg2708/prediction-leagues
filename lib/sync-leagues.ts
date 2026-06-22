@@ -55,18 +55,22 @@ export async function syncLeaguesGrouped(
       continue;
     }
 
+    // Defensive: never let one malformed row (missing team/date) reject the
+    // whole NOT NULL batch insert.
+    const clean = rows.filter((m) => m.team_home && m.team_away && m.starts_at);
+
     for (const l of group) {
-      if (!rows.length) {
+      if (!clean.length) {
         out[l.id] = { inserted: 0 };
         continue;
       }
       const { error } = await supabase
         .from("matches")
         .upsert(
-          rows.map((m) => ({ ...m, league_id: l.id })),
+          clean.map((m) => ({ ...m, league_id: l.id })),
           { onConflict: "league_id,external_id", ignoreDuplicates: true }
         );
-      out[l.id] = error ? { inserted: 0, error: error.message } : { inserted: rows.length };
+      out[l.id] = error ? { inserted: 0, error: error.message } : { inserted: clean.length };
     }
   }
 
