@@ -9,6 +9,7 @@ import {
   type LifecycleStatus,
 } from "@coinbase/onchainkit/transaction";
 import { useRouter, useSearchParams } from "next/navigation";
+import { checkDepositedAction, claimMembershipAction } from "@/app/actions/claim-membership";
 import { joinLeagueAction } from "@/app/actions/join-league";
 import { BottomNav } from "@/app/components/BottomNav";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
@@ -33,6 +34,8 @@ function JoinLeagueContent() {
   const [code, setCode] = useState(params.get("code")?.toUpperCase() ?? "");
   const [lookupState, setLookupState] = useState<LookupState>("idle");
   const [league, setLeague] = useState<League | null>(null);
+  const [alreadyPaid, setAlreadyPaid] = useState(false);
+  const [claiming, setClaiming] = useState(false);
   const autoSearched = useRef(false);
 
   useEffect(() => {
@@ -87,6 +90,30 @@ function JoinLeagueContent() {
     }
   }, [handleSearch, params]);
 
+  // If this wallet already deposited on-chain (e.g. a prior join didn't record),
+  // offer to enter without paying again instead of sending a second deposit
+  // that would revert with AlreadyDeposited.
+  useEffect(() => {
+    if (USE_MOCK || lookupState !== "found" || !league || !profileId) {
+      setAlreadyPaid(false);
+      return;
+    }
+    let cancelled = false;
+    checkDepositedAction(league.id).then((d) => {
+      if (!cancelled) setAlreadyPaid(d);
+    });
+    return () => { cancelled = true; };
+  }, [lookupState, league, profileId]);
+
+  const enterAlreadyPaid = useCallback(async () => {
+    if (!league) return;
+    setClaiming(true);
+    const res = await claimMembershipAction(league.id);
+    setClaiming(false);
+    if (res.ok) router.push(`/leagues/${league.id}`);
+    else console.error("claimMembershipAction failed:", res.error);
+  }, [league, router]);
+
   const handleTxStatus = useCallback(
     async (status: LifecycleStatus) => {
       if (status.statusName !== "success" || !league) return;
@@ -97,8 +124,11 @@ function JoinLeagueContent() {
           leagueId: league.id,
           txHash,
         });
+        // Deposit succeeded on-chain; if recording the join failed for any
+        // reason, fall back to claiming membership so funds are never stranded.
         if (!result.ok) {
           console.error("joinLeagueAction failed:", result.error);
+          await claimMembershipAction(league.id);
         }
       }
 
@@ -183,20 +213,31 @@ function JoinLeagueContent() {
             </div>
 
             <div className={styles.txWrapper}>
-              <Transaction
-                chainId={Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 84532)}
-                calls={depositCalls}
-                onStatus={handleTxStatus}
-                onError={(e) => console.error("tx error", e)}
-              >
-                <TransactionButton
-                  text={`Pay $${league.entry_fee_usdc} USDC & Join`}
+              {alreadyPaid ? (
+                <button
+                  type="button"
                   className={styles.txBtn}
-                />
-                <TransactionStatus>
-                  <TransactionStatusAction />
-                </TransactionStatus>
-              </Transaction>
+                  disabled={claiming}
+                  onClick={enterAlreadyPaid}
+                >
+                  {claiming ? "Entering…" : "You already paid — Enter league"}
+                </button>
+              ) : (
+                <Transaction
+                  chainId={Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 84532)}
+                  calls={depositCalls}
+                  onStatus={handleTxStatus}
+                  onError={(e) => console.error("tx error", e)}
+                >
+                  <TransactionButton
+                    text={`Pay $${league.entry_fee_usdc} USDC & Join`}
+                    className={styles.txBtn}
+                  />
+                  <TransactionStatus>
+                    <TransactionStatusAction />
+                  </TransactionStatus>
+                </Transaction>
+              )}
             </div>
           </div>
         )}
