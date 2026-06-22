@@ -2,23 +2,26 @@
 
 A **prediction leagues mini-app** built on [Base](https://base.org) for the Farcaster / Coinbase ecosystem.
 
-Players create or join tournament-based leagues, predict match outcomes across football, CS2, and NBA, and stake USDC into a shared pool — the highest-scoring player wins it all. In case of a tie the pool is split equally.
+Players create or join tournament-based leagues, predict match outcomes across football, CS2, and NBA, and stake USDC into a shared pool. Top scorers win the pool — winner-take-all for small leagues, a 60/30/10 podium split for leagues of four or more.
 
 ---
 
 ## Features
 
-- **Multi-sport predictions** — Football (football-data.org), CS2 (PandaScore), NBA (RapidAPI)
-- **Tournament-based lifecycle** — league ends when all tournament matches are finished, no fixed duration
-- **On-chain USDC pool** — funds held in `PredictionPoolFee.sol` escrow on Base; payout triggered automatically
-- **5% platform fee** — collected at deposit time so the pool always shows the exact prize amount
-- **Tie splitting** — `payoutMultiple()` divides the pool equally among all tied winners (dust goes to last winner)
-- **Two-phase creation** — backend registers the league on-chain (owner-only), user only approves + deposits
+- **Multi-sport predictions** — Football ([football-data.org](https://www.football-data.org)), CS2 ([PandaScore](https://pandascore.co)), NBA ([ESPN public API](https://site.api.espn.com), no key)
+- **Curated major events** — World Cup, Champions League, top-5 leagues; NBA Finals/Playoffs/Cup; S/A-tier CS2 tournaments only
+- **Tournament-based lifecycle** — league ends when all its matches finish; stale/empty leagues are auto-voided after 14 days
+- **On-chain USDC pool** — funds held in `PredictionPoolFee.sol` escrow on Base; the contract is the source of truth for money
+- **Podium payouts** — `payoutSplit(leagueId, winners[], sharesBps[])`: winner-take-all, equal tie-split, or 60/30/10 podium (4+ players); ties share the sum of the positions they span
+- **Refunds** — under-filled (`min_players` not reached) or dead leagues are voided and refunded on-chain via `refund()`
+- **5% platform fee** — collected at deposit time so the pool always shows the exact prize
+- **Wallet-bound sessions** — SIWE-style signature proves wallet ownership; server actions are bound to the verified wallet, and a deposit is tied to the wallet that actually paid (no misattribution)
+- **Self-recovery** — a wallet that paid on-chain but wasn't recorded can claim membership without paying again
+- **Live standings** — real-time leaderboard with win streaks, last-5 form, and accuracy
+- **Prediction nudges** — Farcaster push to members who haven't predicted a match starting soon
+- **Discover** — search, sport filter, and trending (by pool / players) sort
 - **Farcaster mini-app** — runs natively inside Base App / Warpcast via MiniKit
-- **Wallet integration** — Coinbase Smart Wallet + OnchainKit
-- **Live leaderboards** — real-time ranking via Supabase
-- **Dark & light themes** — CSS-variable system with manual toggle, persists in localStorage
-- **Push notifications** — Farcaster frame notifications for results and payouts
+- **Dark & light themes** — CSS-variable system, persists in localStorage
 
 ---
 
@@ -26,14 +29,30 @@ Players create or join tournament-based leagues, predict match outcomes across f
 
 | Layer | Tech |
 |---|---|
-| Framework | Next.js 15 (App Router) |
+| Framework | Next.js 16 (App Router, Turbopack) |
 | Chain | Base mainnet / Base Sepolia |
-| Wallet | Coinbase Smart Wallet + OnchainKit |
+| Wallet | Coinbase Smart Wallet + OnchainKit + wagmi |
 | Database | Supabase (Postgres + Realtime + RLS) |
 | Smart Contract | Solidity 0.8.35 (`PredictionPoolFee.sol`) |
 | Token | USDC (ERC-20, 6 decimals) |
 | Mini-app SDK | MiniKit (Base App) |
+| Tests | Vitest |
+| Cron | GitHub Actions (Vercel Hobby cron is daily-only) |
 | Styling | CSS Modules, dark/light theme via CSS variables |
+
+---
+
+## Architecture — sources of truth
+
+The app keeps three concerns in separate authoritative stores. Most early bugs came from the DB trying to mirror on-chain money and drifting; the rule below is now enforced:
+
+| Concern | Source of truth | Notes |
+|---|---|---|
+| **Money** (pool, deposits, payouts) | **Smart contract** | Payouts read `getPool` on-chain; `pool_usdc` in the DB is a cache reconciled to `getPool` every cron tick |
+| **Scoring** (predictions, points, rank) | **Database** | Predictions are off-chain by design |
+| **Identity** (who acted) | **Session cookie** | Bound to the connected wallet via signature; deposits verified against the wallet that actually paid |
+
+A wallet's membership is derived from on-chain `Deposited` events — see the integrity audit below.
 
 ---
 
@@ -43,7 +62,7 @@ Players create or join tournament-based leagues, predict match outcomes across f
 
 - Node.js 18+
 - A [Supabase](https://supabase.com) project
-- A [Coinbase Developer Platform](https://portal.cdp.coinbase.com) OnchainKit API key
+- A [Coinbase Developer Platform](https://portal.cdp.coinbase.com) OnchainKit API key (and a Base RPC endpoint)
 - A funded wallet on Base Sepolia (testnet) or Base (mainnet)
 
 ### 1. Clone and install
@@ -60,26 +79,21 @@ npm install
 cp .env.local.example .env.local
 ```
 
-Fill in all values — see [Environment Variables](#environment-variables) below.
+Fill in all values — see [Environment Variables](#environment-variables).
 
 ### 3. Set up the database
 
-Run the SQL files in your Supabase SQL editor in order:
+Run `supabase/schema.sql` in the Supabase SQL editor (it includes tables, the leaderboard view, indexes, RLS, and SECURITY DEFINER functions). Then apply every file in `supabase/migrations/` in filename order.
 
-```
-supabase/schema.sql                         # Tables, views, RLS policies
-supabase/notification_tokens.sql            # Farcaster push token table
-supabase/migrations/add_competition_id.sql  # Tournament-based league support
-supabase/migrations/add_ends_at.sql         # Ends-at timestamp for leagues
-```
+> ⚠️ `20260610_abandoned_matches.sql` runs `ALTER TYPE … ADD VALUE` — execute it on its own (it can't share a transaction with other statements).
 
-### 4. Run the dev server
+### 4. Run
 
 ```bash
-npm run dev
+npm run dev          # dev server at http://localhost:3000
+npm test             # Vitest unit/integration tests
+npm run audit:integrity        # report DB↔chain drift (add --fix to repair)
 ```
-
-Open [http://localhost:3000](http://localhost:3000).
 
 ---
 
@@ -97,6 +111,8 @@ NEXT_PUBLIC_ONCHAINKIT_API_KEY=
 # Chain
 NEXT_PUBLIC_CHAIN_ID=84532                  # 8453 for mainnet
 NEXT_PUBLIC_POOL_ADDRESS=<contract_address>
+RPC_URL=                                    # CDP / Alchemy Base RPC — strongly recommended
+                                            # (public RPC rate-limits signature & deposit verification)
 
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=
@@ -104,28 +120,26 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 
 # Sports APIs
-FOOTBALL_DATA_API_KEY=                      # football-data.org (free)
+FOOTBALL_DATA_API_KEY=                      # football-data.org (free) — WC also available
 PANDASCORE_API_KEY=                         # pandascore.co — CS2 (free, 1000 req/h)
-RAPIDAPI_KEY=                               # RapidAPI — nba-api-free-data.p.rapidapi.com
+                                            # NBA uses ESPN's public API — no key needed
 
-# On-chain signer
-POOL_SIGNER_PRIVATE_KEY=                    # hot wallet — registers leagues and triggers payouts
+# On-chain signer (the contract owner)
+POOL_SIGNER_PRIVATE_KEY=                    # hot wallet — registers leagues, pays out, refunds
 
-# Admin & cron
-ADMIN_SECRET=
-CRON_SECRET=
-NOTIFY_SECRET=
+# Secrets
+SESSION_SECRET=                             # HMAC key for wallet sessions (≥32 chars). Falls back to ADMIN_SECRET if unset
+ADMIN_SECRET=                               # admin panel + server-to-server cron auth
+CRON_SECRET=                                # GitHub Actions → cron endpoints
+NOTIFY_SECRET=                              # internal notify endpoint
 
 # Webhooks (optional)
 FARCASTER_WEBHOOK_SECRET=
 PANDASCORE_WEBHOOK_SECRET=
-
-# Optional
-RPC_URL=                                    # Alchemy / Infura RPC (falls back to public Base RPC)
 ```
 
-> ⚠️ **Never commit `.env.local`** — it is already in `.gitignore`.  
-> ⚠️ `POOL_SIGNER_PRIVATE_KEY` controls real funds on mainnet. Use a dedicated hot wallet with only the minimum balance needed for gas.
+> ⚠️ **Never commit `.env.local`** — it is in `.gitignore`.
+> ⚠️ `POOL_SIGNER_PRIVATE_KEY` controls real funds and must be the contract **owner**. Use a dedicated hot wallet with minimal balance.
 
 ---
 
@@ -133,132 +147,136 @@ RPC_URL=                                    # Alchemy / Infura RPC (falls back t
 
 ```
 app/
-├── page.tsx                        # Home — league feed
-├── leagues/[id]/                   # League detail — matches, standings, history
-├── leagues/create/                 # Create wizard (4 steps: name → sport → tournament → fee)
-├── leagues/join/                   # Join by invite code
-├── leaderboard/                    # Global user leaderboard
-├── profile/                        # User profile & prediction history
-├── admin/                          # Admin panel (ADMIN_SECRET gated)
+├── page.tsx                        # Home — league feed + Discover (search/filter/sort)
+├── leagues/[id]/                   # League detail — matches, standings (streaks/form), history
+├── leagues/create/                 # Create wizard (name → sport → tournament → fee)
+├── leagues/join/                   # Join by invite code; "already paid → Enter" recovery
+├── leaderboard/ · profile/         # Global leaderboard & user history
+├── admin/                          # Admin panel (cookie session via /api/admin/login)
 ├── actions/                        # Server actions
-│   ├── create-league.ts            # Save league to DB + background match sync
-│   ├── join-league.ts              # Add member to DB
-│   ├── fetch-tournaments.ts        # Return available tournaments per sport
-│   ├── register-league-onchain.ts  # Hot wallet calls createLeague() on-chain
-│   ├── save-prediction.ts          # Upsert a prediction row
-│   ├── sync-matches.ts             # Pull fixtures from sports API into DB
-│   └── upsert-profile.ts           # Create / update user profile
+│   ├── create-league.ts            # Verify deposit (real payer) → save league → bg match sync
+│   ├── join-league.ts              # Verify deposit (real payer) → join_league RPC (atomic, idempotent)
+│   ├── claim-membership.ts         # Recover membership for a wallet that already paid on-chain
+│   ├── register-league-onchain.ts  # Owner hot wallet calls createLeague()
+│   ├── save-prediction.ts          # Upsert prediction (locked at kickoff)
+│   ├── sync-matches.ts             # Thin wrapper over syncLeaguesGrouped
+│   ├── fetch-tournaments.ts        # Curated major events per sport
+│   └── upsert-profile.ts           # Create / update profile (session-bound)
 └── api/
+    ├── session/                    # SIWE wallet session: POST sign-in, GET current, DELETE
     ├── admin/
-    │   ├── finalise-league/        # Score predictions + on-chain payout (single or split)
-    │   ├── sync-matches/           # Pull fixtures from sports APIs
-    │   └── search-tournaments/     # PandaScore tournament lookup
-    ├── matches/[id]/result/        # Record a match result & score predictions
+    │   ├── login/ · ping/          # Admin session cookie
+    │   ├── finalise-league/        # min_players gate → podium payoutSplit → notify
+    │   ├── refund-league/          # On-chain refund() of a voided league
+    │   ├── delete-league/          # Delete a pending league
+    │   ├── register-league/        # Re-register a league on the current contract
+    │   ├── sync-matches/ · search-tournaments/
+    ├── matches/[id]/result/        # Record result, award points, payout if last match
+    ├── webhook/ · webhook/pandascore/   # Farcaster + PandaScore webhooks (HMAC verified)
     └── cron/
-        ├── sync-matches/           # Twice daily: pull new fixtures for active leagues
-        ├── update-results/         # Every 15 min: poll for finished match results
-        └── finalise-leagues/       # Daily: auto-finalise completed tournaments
+        ├── sync-matches/           # Daily: pull fixtures (grouped, one call per competition)
+        ├── update-results/         # 15 min: poll results; abandon phantom matches >24h
+        ├── finalise-leagues/       # 30 min: reconcile pools, void/finalise, payout
+        └── notify-upcoming/        # Hourly: nudge members who haven't predicted
 
-contracts/
-└── PredictionPoolFee.sol           # USDC escrow with 5% fee at deposit
+contracts/PredictionPoolFee.sol     # USDC escrow: deposit (5% fee), payout, payoutSplit, refund
 
 lib/
-├── contracts.ts                    # ABI, helpers (leagueIdToBytes32, buildDepositCalls)
-├── fetch-matches.ts                # Sports API fetch logic (football / CS2 / NBA)
-├── mock.ts                         # Mock data for local dev without Supabase
-├── supabase.ts                     # Supabase client init
-├── types.ts                        # Shared TypeScript types
-└── hooks/                          # React hooks (useLeagues, useProfile, etc.)
+├── contracts.ts                    # ABI + helpers (leagueIdToBytes32, buildDepositCalls)
+├── verify-deposit.ts               # Binds a deposit tx to the wallet that paid (shared by create/join)
+├── payout-shares.ts                # Podium/tie share computation (basis points)
+├── reconcile.ts                    # reconcileLeaguePool — DB pool ← on-chain getPool
+├── sync-leagues.ts                 # Grouped fixture sync (one API call per competition)
+├── fetch-matches.ts                # Sports API fetch (football / CS2 / NBA)
+├── session.ts · signin-message.ts  # HMAC wallet session (server) + canonical sign-in message
+├── rate-limit.ts · server-auth.ts  # In-memory rate limiter + admin/cron/notify auth
+└── hooks/                          # React hooks (useProfile, useLeague, useStandingsStats, …)
 
-supabase/
-├── schema.sql                      # Full DB schema, views, RLS policies
-├── notification_tokens.sql         # Farcaster notification token storage
-└── migrations/
-    ├── add_competition_id.sql      # Adds competition_id for tournament linking
-    └── add_ends_at.sql             # Adds ends_at timestamp column
+scripts/audit-integrity.mjs         # Sweep all leagues, reconcile DB↔chain (--fix to apply)
+
+supabase/schema.sql + migrations/   # Schema, indexes, RLS, SECURITY DEFINER functions
 ```
 
 ---
 
 ## Smart Contract
 
-`PredictionPoolFee.sol` — USDC escrow with 5% platform fee collected at deposit:
+`PredictionPoolFee.sol` — USDC escrow, 5% platform fee taken at deposit. The on-chain `leagueId` is `keccak256(toHex(supabaseUUID))`.
 
-1. **`createLeague(leagueId, entryFee)`** — `onlyOwner`; backend hot wallet registers the league
-2. **`deposit(leagueId)`** — player approves `entryFee × 1.05` USDC; contract pulls the full amount, forwards 5% to `feeRecipient` immediately, adds `entryFee` to pool
-3. **`payout(leagueId, winner)`** — `onlyOwner`; sends full pool to the single winner
-4. **`payoutMultiple(leagueId, winners[])`** — `onlyOwner`; splits pool equally among tied winners (dust goes to last winner)
-
-The on-chain `leagueId` is `keccak256(toHex(supabaseUUID))`.
-
-**Deployed addresses:**
-
-| Network | Contract | Address |
+| Function | Access | Purpose |
 |---|---|---|
-| Base Sepolia | `PredictionPoolFee.sol` | `0x76BeBcDF89363E81Fb9960453A9BAb457EC2F2bC` |
-| Base Sepolia | USDC | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
-| Base mainnet | USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
+| `createLeague(leagueId, entryFee)` | owner | register a league |
+| `deposit(leagueId)` | player | pull `entryFee × 1.05`, forward 5% to `feeRecipient`, add `entryFee` to pool |
+| `payout(leagueId, winner)` | owner | full pool to one winner |
+| `payoutMultiple(leagueId, winners[])` | owner | equal split (kept for compat) |
+| `payoutSplit(leagueId, winners[], sharesBps[])` | owner | **shares-based payout (shares sum to 10 000)** — used for podium & ties |
+| `refund(leagueId, players[])` | owner | refund depositors of a voided league; sets `voided`, blocking payout |
+| `hasDeposited` · `getPool` · `getEntryFee` · `isPaid` · `isVoided` | view | reads |
 
-### League creation flow
+**Deployed (Base Sepolia):**
+
+| Item | Address |
+|---|---|
+| `PredictionPoolFee.sol` | `0x34034Abfb4A370BDe22Aa8B9F71B08b43A4Cf96C` |
+| USDC (Sepolia) | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
+| USDC (mainnet) | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
+
+> Redeploying the contract changes `NEXT_PUBLIC_POOL_ADDRESS`; leagues created on a previous contract stay there. Use the admin **Re-register on chain** button to register an existing league on the current contract so deposits work.
+
+### Lifecycle
 
 ```
-1. User fills wizard (name → sport → tournament → fee)
-2. "Create League" → server action registerLeagueOnChain()
-   └─ hot wallet calls createLeague(bytes32, uint96) on-chain
-3. Fee buttons lock — cannot change fee after on-chain registration
-4. Transaction component appears
-   └─ User approves entryFee × 1.05 USDC + calls deposit()
-5. On tx success → createLeagueAction() saves league to DB
-   └─ after() triggers background match sync
-```
+Create:  registerLeagueOnChain() [owner] → user approve+deposit → createLeagueAction()
+         (verifies the Deposited event was emitted by the session wallet)
 
-### Payout flow
+Join:    user approve+deposit → joinLeagueAction() → join_league() RPC (atomic, idempotent)
+         already paid but not recorded? → "Enter league" → claimMembershipAction()
 
-```
-Cron (09:00 UTC) → /api/cron/finalise-leagues
-  → checks all active leagues for completed tournaments
-  → POST /api/admin/finalise-league
-      → queries leaderboard for top score
-      → fetches ALL members with that score
-      → if 1 winner:  payout(leagueId, winner)
-      → if tie:       payoutMultiple(leagueId, [w1, w2, ...])
-      → sends Farcaster push notifications
+Result:  cron update-results → /api/matches/[id]/result → award_points → payout if last match
+
+Finalise (cron, 30 min): reconcile pool ← getPool · void+refund if < min_players or stale ·
+         else podium/tie payoutSplit · notify
 ```
 
 ---
 
 ## Sports Data
 
-| Sport | Provider | Tournaments |
+| Sport | Provider | Notes |
 |---|---|---|
-| Football | [football-data.org](https://www.football-data.org) (free) | PL, CL, Bundesliga, Serie A, La Liga, Ligue 1 + more |
-| CS2 | [PandaScore](https://pandascore.co) (free, 1 000 req/h) | Any running/upcoming tournament (searchable) |
-| NBA | [RapidAPI — nba-api-free-data](https://rapidapi.com/api-sports/api/nba-api-free-data) (free) | NBA Regular Season, Playoffs |
+| Football | football-data.org (free) | WC, CL, PL, La Liga, Serie A, Bundesliga, Ligue 1. Cup fixtures with undecided teams are skipped until teams are set |
+| CS2 | PandaScore (free, 1000 req/h) | S/A-tier tournaments, searchable in admin |
+| NBA | ESPN public API | no key; pulls the next 5 days of games |
 
-Results are polled automatically every 15 minutes via cron — no inbound webhooks required.
+Results poll every 15 min; a PandaScore webhook records CS2 results instantly.
 
 ---
 
-## Deployment (Vercel)
+## Testing & integrity
 
-1. Push to GitHub and connect the repo in [Vercel](https://vercel.com)
-2. Add all environment variables in **Settings → Environment Variables** — set them for **Production**, **Preview**, and **Development**
-3. Cron jobs are defined in `vercel.json`:
-   - `0 9 * * *` — finalise-leagues (daily 09:00 UTC)
-   - `0 */12 * * *` — sync-matches (twice daily)
-   - `*/15 * * * *` — update-results (every 15 min; Hobby plan: once daily)
-4. Set `NEXT_PUBLIC_URL` to your production Vercel URL
+- `npm test` — Vitest. Covers fee math & `leagueIdToBytes32`, HMAC sessions, rate limiting, grouped sync, podium/tie shares, and the **deposit-misattribution guard** (`verify-deposit`).
+- `npm run audit:integrity` — sweeps non-finished leagues, compares `pool_usdc` vs `getPool` and members vs on-chain `Deposited` events; `--fix` reconciles in bulk.
 
-### Mainnet deployment checklist
+---
 
-1. Deploy `PredictionPoolFee.sol` from main wallet with:
-   - `_usdc`: `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`
-   - `_feeRecipient`: wallet that receives platform fees
-2. Copy contract address → set `NEXT_PUBLIC_POOL_ADDRESS` in Vercel
-3. BaseScan → Write Contract → `transferOwnership(hotWallet)`
-4. Verify contract on BaseScan (single file, compiler v0.8.35)
-5. Update `NEXT_PUBLIC_CHAIN_ID=8453` in Vercel
-6. Redeploy
+## Deployment
+
+**Vercel** — connect the repo, set all env vars for Production/Preview/Development, set `NEXT_PUBLIC_URL`.
+
+**Cron runs on GitHub Actions** (`.github/workflows/`), not Vercel cron (Hobby is daily-only). Set repo secrets `CRON_SECRET` and `NEXT_PUBLIC_URL`:
+
+| Workflow | Schedule |
+|---|---|
+| update-results | every 15 min |
+| finalise-leagues | every 30 min |
+| notify-upcoming | hourly |
+| sync-matches | daily 05:00 UTC |
+
+### Mainnet checklist
+
+1. Deploy `PredictionPoolFee.sol` (Remix, compiler 0.8.35) **from the hot-wallet** so `owner` = `POOL_SIGNER_PRIVATE_KEY`'s address, with `_usdc` = mainnet USDC and `_feeRecipient` = your fee wallet (a multisig is fine).
+2. Set `NEXT_PUBLIC_POOL_ADDRESS` (new), `NEXT_PUBLIC_CHAIN_ID=8453`, and `RPC_URL` (mainnet) in Vercel.
+3. Verify on BaseScan (single file, v0.8.35) and redeploy.
 
 ---
 
