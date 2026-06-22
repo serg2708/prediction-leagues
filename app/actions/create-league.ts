@@ -2,6 +2,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { after } from "next/server";
+import { decodeEventLog } from "viem";
 import { syncLeagueMatches } from "@/app/actions/sync-matches";
 import { POOL_ADDRESS, PREDICTION_POOL_ABI, leagueIdToBytes32 } from "@/lib/contracts";
 import { getSessionAddress } from "@/lib/session";
@@ -36,17 +37,34 @@ export async function createLeagueAction(params: {
     throw new Error("Invalid minPlayers value");
   }
 
-  // C3: Verify creator's deposit on-chain before recording
+  // Verify the deposit tx was made BY this session wallet FOR this league.
+  // A bare hasDeposited(league, session) check is too weak: if the wallet that
+  // actually paid differs from the session, the league would be created with
+  // the wrong creator_id and the deposit misattributed.
   try {
     const publicClient = getPublicClient();
-    const leagueBytes32 = leagueIdToBytes32(leagueUuid);
-    const deposited = await publicClient.readContract({
-      address: POOL_ADDRESS,
-      abi: PREDICTION_POOL_ABI,
-      functionName: "hasDeposited",
-      args: [leagueBytes32, profileId as `0x${string}`],
-    });
-    if (!deposited) throw new Error("On-chain deposit not confirmed");
+    const leagueBytes32 = leagueIdToBytes32(leagueUuid).toLowerCase();
+    const receipt = await publicClient.getTransactionReceipt({ hash: txHash as `0x${string}` });
+    if (receipt.status !== "success") throw new Error("Deposit transaction failed");
+
+    let matched = false;
+    for (const log of receipt.logs) {
+      if (log.address.toLowerCase() !== POOL_ADDRESS.toLowerCase()) continue;
+      try {
+        const ev = decodeEventLog({ abi: PREDICTION_POOL_ABI, data: log.data, topics: log.topics });
+        if (
+          ev.eventName === "Deposited" &&
+          (ev.args.leagueId as string).toLowerCase() === leagueBytes32 &&
+          (ev.args.player as string).toLowerCase() === profileId.toLowerCase()
+        ) {
+          matched = true;
+          break;
+        }
+      } catch {
+        // not a Deposited log — skip
+      }
+    }
+    if (!matched) throw new Error("deposit_wallet_mismatch");
   } catch (e) {
     throw e instanceof Error ? e : new Error("Could not verify on-chain deposit");
   }
