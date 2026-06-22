@@ -13,6 +13,7 @@
 import { createClient } from "@supabase/supabase-js";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { reconcileLeaguePool } from "@/lib/reconcile";
 import { requireCron } from "@/lib/server-auth";
 import { syncLeaguesGrouped } from "@/lib/sync-leagues";
 
@@ -58,6 +59,11 @@ export async function GET(req: NextRequest) {
       await syncLeaguesGrouped(syncTargets);
     } catch { /* best-effort — don't block finalization on sync failure */ }
   }
+
+  // Source of truth for money is the contract — reconcile each live league's
+  // displayed pool to its on-chain balance so a missed join can't leave
+  // pool_usdc drifted. Best-effort, runs every cron tick.
+  await Promise.allSettled(leagues.map((l) => reconcileLeaguePool(l.id)));
 
   for (const league of leagues) {
     // Skip if ends_at is in the future (fixed-date leagues)

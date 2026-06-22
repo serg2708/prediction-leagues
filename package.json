@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "audit:integrity": "node scripts/audit-integrity.mjs"
   },
   "dependencies": {
     "@coinbase/onchainkit": "latest",

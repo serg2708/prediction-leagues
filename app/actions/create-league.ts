@@ -2,11 +2,10 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { after } from "next/server";
-import { decodeEventLog } from "viem";
 import { syncLeagueMatches } from "@/app/actions/sync-matches";
-import { POOL_ADDRESS, PREDICTION_POOL_ABI, leagueIdToBytes32 } from "@/lib/contracts";
 import { getSessionAddress } from "@/lib/session";
 import type { Sport } from "@/lib/types";
+import { receiptHasDeposit } from "@/lib/verify-deposit";
 import { getPublicClient } from "@/lib/viem-server";
 
 const supabase = createClient(
@@ -42,29 +41,10 @@ export async function createLeagueAction(params: {
   // actually paid differs from the session, the league would be created with
   // the wrong creator_id and the deposit misattributed.
   try {
-    const publicClient = getPublicClient();
-    const leagueBytes32 = leagueIdToBytes32(leagueUuid).toLowerCase();
-    const receipt = await publicClient.getTransactionReceipt({ hash: txHash as `0x${string}` });
-    if (receipt.status !== "success") throw new Error("Deposit transaction failed");
-
-    let matched = false;
-    for (const log of receipt.logs) {
-      if (log.address.toLowerCase() !== POOL_ADDRESS.toLowerCase()) continue;
-      try {
-        const ev = decodeEventLog({ abi: PREDICTION_POOL_ABI, data: log.data, topics: log.topics });
-        if (
-          ev.eventName === "Deposited" &&
-          (ev.args.leagueId as string).toLowerCase() === leagueBytes32 &&
-          (ev.args.player as string).toLowerCase() === profileId.toLowerCase()
-        ) {
-          matched = true;
-          break;
-        }
-      } catch {
-        // not a Deposited log — skip
-      }
+    const receipt = await getPublicClient().getTransactionReceipt({ hash: txHash as `0x${string}` });
+    if (!receiptHasDeposit(receipt, leagueUuid, profileId)) {
+      throw new Error("deposit_wallet_mismatch");
     }
-    if (!matched) throw new Error("deposit_wallet_mismatch");
   } catch (e) {
     throw e instanceof Error ? e : new Error("Could not verify on-chain deposit");
   }

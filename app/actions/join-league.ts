@@ -1,9 +1,8 @@
 "use server";
 
 import { createClient } from "@supabase/supabase-js";
-import { decodeEventLog } from "viem";
-import { POOL_ADDRESS, PREDICTION_POOL_ABI, leagueIdToBytes32 } from "@/lib/contracts";
 import { getSessionAddress } from "@/lib/session";
+import { receiptHasDeposit } from "@/lib/verify-deposit";
 import { getPublicClient } from "@/lib/viem-server";
 
 const supabase = createClient(
@@ -39,34 +38,8 @@ export async function joinLeagueAction(params: {
   // wallet that actually paid differs from the session (e.g. account switched),
   // the deposit gets misattributed and the real payer is left out of the league.
   try {
-    const publicClient = getPublicClient();
-    const leagueBytes32 = leagueIdToBytes32(leagueId).toLowerCase();
-    const receipt = await publicClient.getTransactionReceipt({ hash: txHash as `0x${string}` });
-
-    if (receipt.status !== "success") {
-      return { ok: false, error: "Deposit transaction failed" };
-    }
-
-    let matched = false;
-    for (const log of receipt.logs) {
-      if (log.address.toLowerCase() !== POOL_ADDRESS.toLowerCase()) continue;
-      try {
-        const ev = decodeEventLog({ abi: PREDICTION_POOL_ABI, data: log.data, topics: log.topics });
-        if (
-          ev.eventName === "Deposited" &&
-          (ev.args.leagueId as string).toLowerCase() === leagueBytes32 &&
-          (ev.args.player as string).toLowerCase() === profileId.toLowerCase()
-        ) {
-          matched = true;
-          break;
-        }
-      } catch {
-        // not a Deposited log — skip
-      }
-    }
-
-    if (!matched) {
-      // Deposit wasn't made by the connected wallet for this league
+    const receipt = await getPublicClient().getTransactionReceipt({ hash: txHash as `0x${string}` });
+    if (!receiptHasDeposit(receipt, leagueId, profileId)) {
       return { ok: false, error: "deposit_wallet_mismatch" };
     }
   } catch {
