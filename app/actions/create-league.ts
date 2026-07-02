@@ -13,6 +13,54 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
 );
 
+/**
+ * Persist the league row BEFORE the creator's deposit tx. Closes a gap where a
+ * successful on-chain deposit whose createLeagueAction never ran (tab closed,
+ * network drop) would leave the creator paid with no league row and no recovery
+ * path. With the row present, claimMembershipAction can rebuild the membership
+ * from the on-chain deposit. Idempotent — safe to call more than once, and never
+ * overwrites an existing row.
+ */
+export async function createLeagueDraft(params: {
+  leagueUuid: string;
+  name: string;
+  sport: Sport;
+  competitionId: string;
+  entryFee: number;
+  isPublic: boolean;
+  minPlayers: number;
+}): Promise<{ ok: boolean; error?: string }> {
+  const profileId = await getSessionAddress();
+  if (!profileId) return { ok: false, error: "Not authenticated" };
+
+  const { leagueUuid, name, sport, competitionId, entryFee, isPublic, minPlayers } = params;
+
+  if (!Number.isFinite(entryFee) || entryFee <= 0 || entryFee > 10_000) {
+    return { ok: false, error: "Invalid entry fee" };
+  }
+  if (!Number.isInteger(minPlayers) || minPlayers < 2 || minPlayers > 100) {
+    return { ok: false, error: "Invalid minPlayers value" };
+  }
+
+  const { error } = await supabase.from("leagues").upsert(
+    {
+      id: leagueUuid,
+      name,
+      sport,
+      competition_id: competitionId,
+      entry_fee_usdc: entryFee,
+      pool_usdc: 0,
+      creator_id: profileId,
+      is_public: isPublic,
+      min_players: minPlayers,
+    },
+    { onConflict: "id", ignoreDuplicates: true }
+  );
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
 export async function createLeagueAction(params: {
   leagueUuid: string;
   name: string;
@@ -49,19 +97,25 @@ export async function createLeagueAction(params: {
     throw e instanceof Error ? e : new Error("Could not verify on-chain deposit");
   }
 
+  // Upsert (not insert): the row may already exist as a pre-deposit draft
+  // (createLeagueDraft). Overwrite it with the confirmed pool so this stays
+  // idempotent whether or not the draft ran.
   const { data } = await supabase
     .from("leagues")
-    .insert({
-      id: leagueUuid,
-      name,
-      sport,
-      competition_id: competitionId,
-      entry_fee_usdc: entryFee,
-      pool_usdc: entryFee,
-      creator_id: profileId,
-      is_public: isPublic,
-      min_players: minPlayers,
-    })
+    .upsert(
+      {
+        id: leagueUuid,
+        name,
+        sport,
+        competition_id: competitionId,
+        entry_fee_usdc: entryFee,
+        pool_usdc: entryFee,
+        creator_id: profileId,
+        is_public: isPublic,
+        min_players: minPlayers,
+      },
+      { onConflict: "id" }
+    )
     .select("id")
     .single();
 

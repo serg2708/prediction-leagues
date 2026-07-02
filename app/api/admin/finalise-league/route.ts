@@ -14,7 +14,7 @@ import { createPublicClient, createWalletClient, http, isAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { base, baseSepolia } from "viem/chains";
 import { PREDICTION_POOL_ABI, POOL_ADDRESS, leagueIdToBytes32 } from "@/lib/contracts";
-import { computePayoutShares } from "@/lib/payout-shares";
+import { computePayoutAmounts, computePayoutShares } from "@/lib/payout-shares";
 import { requireAdmin } from "@/lib/server-auth";
 
 const supabase = createClient(
@@ -122,29 +122,33 @@ export async function POST(req: NextRequest) {
     })
     .filter((f): f is number => !!f);
 
-  // Notifications
-  const winnerIds = new Set(validWinners.map((w) => w.profile_id));
+  // Notify each actual payout winner with the exact USDC they receive — mirrors
+  // payoutSplit so podium winners aren't told they won the whole pool.
+  const amounts = computePayoutAmounts(league.pool_usdc, { winners: payoutWinners, sharesBps });
+  const isSplit = payoutWinners.length > 1;
+
   const { data: winnerProfiles } = await supabase
     .from("profiles")
     .select("id, fid")
-    .in("id", [...winnerIds]);
+    .in("id", payoutWinners.length ? payoutWinners : [""]);
 
-  const winnerFids = (winnerProfiles ?? [])
-    .map((p) => p.fid as number | null)
-    .filter((f): f is number => !!f);
-
-  const prize = isTie
-    ? `$${(league.pool_usdc / validWinners.length).toFixed(2)}`
-    : `$${league.pool_usdc}`;
-
-  if (winnerFids.length) {
-    const msg = isTie
-      ? `It's a tie! You split the prize — ${prize} USDC each from "${league.name}"!`
-      : `You topped "${league.name}" and won ${prize} USDC!`;
-    await sendNotifications(winnerFids, isTie ? "Tie! 🤝🏆" : "You won! 🏆", msg, `${ORIGIN}/leagues/${league_id}`);
+  const winnerFids = new Set<number>();
+  for (const wp of winnerProfiles ?? []) {
+    const fid = wp.fid as number | null;
+    const amount = amounts[wp.id as string];
+    if (!fid || !amount) continue;
+    winnerFids.add(fid);
+    await sendNotifications(
+      [fid],
+      isSplit ? "You're in the money! 🤝🏆" : "You won! 🏆",
+      isSplit
+        ? `You placed in "${league.name}" and won $${amount.toFixed(2)} USDC from the prize pool!`
+        : `You topped "${league.name}" and won $${amount.toFixed(2)} USDC!`,
+      `${ORIGIN}/leagues/${league_id}`
+    );
   }
 
-  const otherFids = allFids.filter((f) => !winnerFids.includes(f));
+  const otherFids = allFids.filter((f) => !winnerFids.has(f));
   if (otherFids.length) {
     await sendNotifications(
       otherFids,
@@ -212,6 +216,11 @@ export async function POST(req: NextRequest) {
     });
 
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    // viem does not throw on an on-chain revert — check status explicitly, else
+    // a reverted payout would lock the league as "paid" with no funds moved.
+    if (receipt.status === "reverted") {
+      throw new Error(`payoutSplit reverted (tx: ${hash})`);
+    }
     txHash = receipt.transactionHash;
     // Persist the confirmed hash so the slot stays permanently locked
     await supabase

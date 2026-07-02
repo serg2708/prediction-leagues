@@ -75,3 +75,28 @@ export function computePayoutShares(ranked: RankedMember[]): PayoutShares {
 
   return { winners, sharesBps };
 }
+
+/**
+ * Map a {winners, sharesBps} split to the exact USDC each winner receives from
+ * `poolUsdc`, mirroring the contract's payoutSplit distribution: each share is
+ * floored in 6-decimal base units and all rounding dust goes to the LAST
+ * winner, so the amounts sum to exactly `poolUsdc`. Used to show truthful prize
+ * figures in win notifications instead of implying everyone gets the full pool.
+ */
+export function computePayoutAmounts(
+  poolUsdc: number,
+  shares: PayoutShares
+): Record<string, number> {
+  const total = Math.round(poolUsdc * 1_000_000); // base units, as on-chain
+  const out: Record<string, number> = {};
+  let distributed = 0;
+  shares.winners.forEach((id, i) => {
+    const isLast = i === shares.winners.length - 1;
+    const micro = isLast
+      ? total - distributed
+      : Math.floor((total * shares.sharesBps[i]) / 10_000);
+    distributed += micro;
+    out[id] = micro / 1_000_000;
+  });
+  return out;
+}

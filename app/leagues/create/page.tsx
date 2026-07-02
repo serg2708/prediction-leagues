@@ -10,7 +10,7 @@ import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-import { createLeagueAction } from "@/app/actions/create-league";
+import { createLeagueAction, createLeagueDraft } from "@/app/actions/create-league";
 import { fetchTournaments, type Tournament } from "@/app/actions/fetch-tournaments";
 import { registerLeagueOnChain } from "@/app/actions/register-league-onchain";
 import { BottomNav } from "@/app/components/BottomNav";
@@ -118,13 +118,29 @@ export default function CreateLeaguePage() {
     setRegistering(true);
     setRegError(null);
     const res = await registerLeagueOnChain(leagueUuid, fee);
-    setRegistering(false);
-    if (res.ok) {
-      setRegisteredFee(fee);
-      setRegistered(true);
-    } else {
+    if (!res.ok) {
+      setRegistering(false);
       setRegError(res.error ?? "Registration failed");
+      return;
     }
+    // Persist the league row before the deposit tx so a dropped
+    // createLeagueAction can't strand the creator's on-chain deposit
+    // (claimMembership can then recover it). Best-effort — createLeagueAction
+    // upserts the row again after the deposit, so a failure here isn't fatal.
+    if (!USE_MOCK) {
+      await createLeagueDraft({
+        leagueUuid,
+        name: form.name.trim(),
+        sport: form.sport as Sport,
+        competitionId: form.competitionId,
+        entryFee: fee,
+        isPublic: form.isPublic,
+        minPlayers: form.minPlayers,
+      });
+    }
+    setRegistering(false);
+    setRegisteredFee(fee);
+    setRegistered(true);
   }
   const stepLabels = ["Name", "Sport", "Tournament", "Entry Fee"];
 

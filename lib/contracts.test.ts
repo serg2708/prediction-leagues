@@ -1,7 +1,6 @@
 import { decodeFunctionData, type Hex } from "viem";
 import { describe, expect, it } from "vitest";
 import {
-  buildCreateLeagueCalls,
   buildDepositCalls,
   type Call,
   ERC20_ABI,
@@ -59,25 +58,5 @@ describe("buildDepositCalls fee math", () => {
     const calls = buildDepositCalls(UUID, 5);
     const approveArgs = decodeFunctionData({ abi: ERC20_ABI, data: dataOf(calls[0]) });
     expect(approveArgs.args[1]).toBe(BigInt(5_250_000));
-  });
-});
-
-describe("buildCreateLeagueCalls", () => {
-  it("creates the league with the raw entry fee then approves the +5% total", () => {
-    const calls = buildCreateLeagueCalls(UUID, 10);
-    expect(calls).toHaveLength(3);
-
-    const create = decodeFunctionData({ abi: PREDICTION_POOL_ABI, data: dataOf(calls[0]) });
-    expect(create.functionName).toBe("createLeague");
-    expect(create.args?.[0]).toBe(leagueIdToBytes32(UUID));
-    // entryFee is the raw fee (no platform fee baked in) — 10 USDC
-    expect(create.args?.[1]).toBe(BigInt(10_000_000));
-
-    const approve = decodeFunctionData({ abi: ERC20_ABI, data: dataOf(calls[1]) });
-    // approval includes the 5% fee — 10.5 USDC
-    expect(approve.args[1]).toBe(BigInt(10_500_000));
-
-    const deposit = decodeFunctionData({ abi: PREDICTION_POOL_ABI, data: dataOf(calls[2]) });
-    expect(deposit.functionName).toBe("deposit");
   });
 });

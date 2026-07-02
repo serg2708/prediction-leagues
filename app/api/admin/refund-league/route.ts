@@ -93,28 +93,44 @@ export async function POST(req: NextRequest) {
     );
     const walletClient = createWalletClient({ account, chain, transport: http(rpcUrl) });
     const publicClient = createPublicClient({ chain, transport: http(rpcUrl) });
+    const leagueBytes32 = leagueIdToBytes32(league_id);
 
-    const hash = await walletClient.writeContract({
-      address: POOL_ADDRESS,
-      abi: PREDICTION_POOL_ABI,
-      functionName: "refund",
-      args: [leagueIdToBytes32(league_id), players as `0x${string}`[]],
-    });
-
-    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    // Refund in chunks so one blacklisted USDC recipient (or a very large
+    // member list hitting the block gas limit) can't revert the entire refund.
+    // The contract's refund is idempotent per player — the `deposited` flag is
+    // cleared on refund — so a retry after a partial failure safely skips
+    // anyone already refunded.
+    const CHUNK = 50;
+    const txHashes: string[] = [];
+    for (let i = 0; i < players.length; i += CHUNK) {
+      const batch = players.slice(i, i + CHUNK) as `0x${string}`[];
+      const hash = await walletClient.writeContract({
+        address: POOL_ADDRESS,
+        abi: PREDICTION_POOL_ABI,
+        functionName: "refund",
+        args: [leagueBytes32, batch],
+      });
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      // viem does not throw on an on-chain revert — inspect status explicitly,
+      // else a reverted refund would be recorded as a successful settlement.
+      if (receipt.status === "reverted") {
+        throw new Error(`refund batch #${i / CHUNK} reverted (tx: ${hash})`);
+      }
+      txHashes.push(receipt.transactionHash);
+    }
 
     await supabase
       .from("leagues")
       .update({
-        payout_tx_hash: receipt.transactionHash,
+        payout_tx_hash: txHashes[txHashes.length - 1] ?? "pending",
         needs_refund: false,
         status: "finished",
         payout_error: null,
       })
       .eq("id", league_id);
 
-    console.log(`[refund-league] Refunded ${players.length} players for ${league_id}: ${receipt.transactionHash}`);
-    return NextResponse.json({ ok: true, refunded: players.length, txHash: receipt.transactionHash });
+    console.log(`[refund-league] Refunded ${players.length} players for ${league_id} in ${txHashes.length} tx(s)`);
+    return NextResponse.json({ ok: true, refunded: players.length, txHashes });
   } catch (err) {
     // Release the slot and record the error so the admin can retry
     await supabase

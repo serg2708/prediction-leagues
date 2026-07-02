@@ -13,7 +13,7 @@ import { createPublicClient, createWalletClient, http, isAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { base, baseSepolia } from "viem/chains";
 import { POOL_ADDRESS, PREDICTION_POOL_ABI, leagueIdToBytes32 } from "@/lib/contracts";
-import { computePayoutShares } from "@/lib/payout-shares";
+import { computePayoutAmounts, computePayoutShares } from "@/lib/payout-shares";
 import { requireAdmin } from "@/lib/server-auth";
 
 const VALID_OUTCOMES = new Set<string>(["home", "draw", "away", "team1", "team2"]);
@@ -52,7 +52,7 @@ export async function POST(
     return NextResponse.json({ error: "Invalid result value" }, { status: 400 });
   }
 
-  // 1 — Load match; bail out early if already finished (prevents double point awards)
+  // 1 — Load match (needed for team names / league_id in notifications below)
   const { data: match, error: matchErr } = await supabase
     .from("matches")
     .select("id, league_id, team_home, team_away, status")
@@ -63,18 +63,27 @@ export async function POST(
     return NextResponse.json({ error: matchErr?.message ?? "Match not found" }, { status: 404 });
   }
 
-  if (match.status === "finished") {
-    return NextResponse.json({ ok: true, matchId, leagueId: match.league_id, skipped: "already finished" });
-  }
-
-  // 2 — Mark finished
-  const { error: updateErr } = await supabase
+  // 2 — Atomically claim & record the result in one write. The
+  // `.neq("status","finished")` guard makes THIS the single writer of the
+  // finish transition: concurrent or duplicate deliveries (e.g. a webhook
+  // retry) that lose the race get 0 rows back and bail out before points are
+  // awarded twice. Callers MUST NOT pre-mark the match finished — doing so
+  // makes this update match 0 rows, so the result is never recorded and points
+  // are never awarded.
+  const { data: claimed, error: updateErr } = await supabase
     .from("matches")
     .update({ status: "finished", result, score_home, score_away })
-    .eq("id", matchId);
+    .eq("id", matchId)
+    .neq("status", "finished")
+    .select("id")
+    .maybeSingle();
 
   if (updateErr) {
     return NextResponse.json({ error: updateErr.message }, { status: 500 });
+  }
+
+  if (!claimed) {
+    return NextResponse.json({ ok: true, matchId, leagueId: match.league_id, skipped: "already finished" });
   }
 
   // 3 — Award points (safe: match was not finished before this call)
@@ -155,8 +164,6 @@ async function finaliseLeague(leagueId: string) {
 
   if (!ranked?.length) return;
 
-  const top = ranked[0];
-
   // M5: Filter out any non-EVM addresses before payout, keep leaderboard order
   const payable = ranked.filter((w) => isAddress(w.profile_id as string));
   // Podium (60/30/10) for 4+ players, winner-take-all / tie-split otherwise
@@ -164,26 +171,42 @@ async function finaliseLeague(leagueId: string) {
     payable.map((w) => ({ profile_id: w.profile_id as string, points: w.points as number }))
   );
 
-  const topWinners = ranked.filter((w) => w.points === top.points);
-  const isTie      = topWinners.length > 1;
-  const winners    = topWinners.filter((w) => isAddress(w.profile_id as string));
-
-  // Get pool amount for notification
+  // Pool + name for notifications
   const { data: league } = await supabase
     .from("leagues")
     .select("pool_usdc, name")
     .eq("id", leagueId)
     .single();
+  const leagueName = league?.name ?? "the league";
 
-  // Get winner FID via direct profiles table (FK joins through views can fail)
-  const { data: winnerProfile } = await supabase
+  // Exact USDC each winner receives — mirrors the on-chain payoutSplit so a
+  // notification never overstates the prize (podium pays 60/30/10, not 100%).
+  const amounts = computePayoutAmounts(league?.pool_usdc ?? 0, { winners: payoutWinners, sharesBps });
+  const isSplit = payoutWinners.length > 1;
+
+  // FIDs for the actual payout winners (direct table read; FK joins via views can fail)
+  const { data: winnerProfiles } = await supabase
     .from("profiles")
-    .select("fid")
-    .eq("id", top.profile_id)
-    .single();
-  const winnerFid = winnerProfile?.fid ?? null;
+    .select("id, fid")
+    .in("id", payoutWinners.length ? payoutWinners : [""]);
 
-  // Notify ALL league members
+  const winnerFids = new Set<number>();
+  for (const wp of winnerProfiles ?? []) {
+    const fid = wp.fid as number | null;
+    const amount = amounts[wp.id as string];
+    if (!fid || !amount) continue;
+    winnerFids.add(fid);
+    await sendNotifications(
+      [fid],
+      isSplit ? "You're in the money! 🤝🏆" : "You won! 🏆",
+      isSplit
+        ? `You placed in "${leagueName}" and won $${amount.toFixed(2)} USDC from the prize pool!`
+        : `You topped "${leagueName}" and won $${amount.toFixed(2)} USDC!`,
+      `${ORIGIN}/leagues/${leagueId}`
+    );
+  }
+
+  // Everyone who didn't get paid: final-standings notification
   const { data: members } = await supabase
     .from("league_members")
     .select("profile_id, profiles(fid)")
@@ -196,26 +219,12 @@ async function finaliseLeague(leagueId: string) {
     })
     .filter((f): f is number => !!f);
 
-  if (winnerFid) {
-    const prize = isTie
-      ? `$${((league?.pool_usdc ?? 0) / winners.length).toFixed(2)} (split)`
-      : `$${league?.pool_usdc}`;
-    await sendNotifications(
-      [winnerFid],
-      isTie ? "Tie! 🤝🏆" : "You won! 🏆",
-      isTie
-        ? `It's a tie! You share the prize — ${prize} USDC from "${league?.name ?? "the league"}"!`
-        : `You topped ${league?.name ?? "the league"} and won ${prize} USDC!`,
-      `${ORIGIN}/leagues/${leagueId}`
-    );
-  }
-
-  const otherFids = allFids.filter((f) => f !== winnerFid);
+  const otherFids = allFids.filter((f) => !winnerFids.has(f));
   if (otherFids.length) {
     await sendNotifications(
       otherFids,
       "League over 🏁",
-      `${league?.name ?? "Your league"} has finished. See the final standings!`,
+      `"${leagueName}" has finished. See the final standings!`,
       `${ORIGIN}/leagues/${leagueId}`
     );
   }
@@ -275,6 +284,11 @@ async function onChainPayout(leagueUuid: string, winnerAddresses: string[], shar
     });
 
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    // viem does not throw on an on-chain revert — check status explicitly, else
+    // a reverted payout would lock the league as "paid" with no funds moved.
+    if (receipt.status === "reverted") {
+      throw new Error(`payoutSplit reverted (tx: ${receipt.transactionHash})`);
+    }
     // Persist the confirmed tx hash so the slot is permanently locked
     await supabase
       .from("leagues")

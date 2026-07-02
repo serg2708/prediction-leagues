@@ -101,17 +101,12 @@ export async function POST(req: NextRequest) {
 
   const result: PredictionOutcome = winnerName === match.team_home ? "team1" : "team2";
 
-  // MED-6: Atomically claim this match for processing — prevents duplicate webhook delivery
-  // from racing. If 0 rows updated (already finished), bail out immediately.
-  const { data: claimed } = await supabase
-    .from("matches")
-    .update({ status: "finished" })
-    .eq("id", match.id)
-    .neq("status", "finished")
-    .select("id")
-    .single();
-
-  if (!claimed) {
+  // Best-effort skip if we've already recorded this match. We must NOT pre-mark
+  // it "finished" here: the result endpoint records the outcome only on the
+  // status→finished transition, so claiming it first would suppress point
+  // awarding. Duplicate deliveries that slip past this read are still deduped
+  // atomically by the result endpoint's `.neq("status","finished")` guard.
+  if (match.status === "finished") {
     return NextResponse.json({ ok: true, skipped: "already finished" });
   }
 

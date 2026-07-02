@@ -55,7 +55,10 @@ export function useDiscoverLeagues(profileId: string | undefined) {
           .map(({ league_members, ...l }) => ({
             ...l,
             members_count: league_members?.[0]?.count ?? 0,
-          }));
+          }))
+          // Hide empty leagues: a pre-deposit draft (creator hasn't paid yet)
+          // has no members and shouldn't be joinable until it's funded.
+          .filter((l) => l.members_count > 0);
 
         setLeagues(rows as DiscoverLeague[]);
       } finally {

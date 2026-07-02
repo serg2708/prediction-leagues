@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computePayoutShares, type RankedMember } from "@/lib/payout-shares";
+import { computePayoutAmounts, computePayoutShares, type RankedMember } from "@/lib/payout-shares";
 
 function m(id: string, points: number): RankedMember {
   return { profile_id: id, points };
@@ -80,5 +80,28 @@ describe("computePayoutShares — podium (4+ players)", () => {
       expect(sum(res.sharesBps)).toBe(10_000);
       expect(res.winners.length).toBe(res.sharesBps.length);
     }
+  });
+});
+
+describe("computePayoutAmounts", () => {
+  it("winner-take-all gets the whole pool", () => {
+    const amounts = computePayoutAmounts(100, { winners: ["a"], sharesBps: [10_000] });
+    expect(amounts).toEqual({ a: 100 });
+  });
+
+  it("podium 60/30/10 splits a $100 pool", () => {
+    const amounts = computePayoutAmounts(100, { winners: ["a", "b", "c"], sharesBps: [6_000, 3_000, 1_000] });
+    expect(amounts).toEqual({ a: 60, b: 30, c: 10 });
+  });
+
+  it("routes rounding dust to the last winner so amounts sum to the pool", () => {
+    // 10 USDC three-way tie: 3.333.../3.333.../3.333... — last winner absorbs dust
+    const shares = computePayoutShares([m("a", 10), m("b", 10), m("c", 10)]);
+    const amounts = computePayoutAmounts(10, shares);
+    const total = Object.values(amounts).reduce((s, x) => s + x, 0);
+    expect(total).toBeCloseTo(10, 6);
+    // base units: 3_334_000-ish floor per share, remainder to last
+    expect(amounts.a).toBeCloseTo(3.334, 6);
+    expect(amounts.c).toBeGreaterThan(0);
   });
 });

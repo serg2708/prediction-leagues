@@ -120,14 +120,16 @@ export const PREDICTION_POOL_ABI = [
     ],
     anonymous: false,
   },
-  { name: "NotOwner",      type: "error" as const, inputs: [] },
-  { name: "LeagueNotFound", type: "error" as const, inputs: [] },
+  // Errors mirror PredictionPoolFee.sol exactly so revert reasons decode.
+  { name: "NotOwner",         type: "error" as const, inputs: [] },
+  { name: "ZeroAddress",      type: "error" as const, inputs: [] },
+  { name: "EmptyWinners",     type: "error" as const, inputs: [] },
+  { name: "LeagueNotFound",   type: "error" as const, inputs: [] },
   { name: "AlreadyDeposited", type: "error" as const, inputs: [] },
-  { name: "WrongAmount",   type: "error" as const, inputs: [] },
-  { name: "AlreadyPaid",   type: "error" as const, inputs: [] },
-  { name: "TransferFailed", type: "error" as const, inputs: [] },
-  { name: "NotDepositor",  type: "error" as const, inputs: [] },
-  { name: "BadShares",     type: "error" as const, inputs: [] },
+  { name: "AlreadyPaid",      type: "error" as const, inputs: [] },
+  { name: "TransferFailed",   type: "error" as const, inputs: [] },
+  { name: "NotDepositor",     type: "error" as const, inputs: [] },
+  { name: "BadShares",        type: "error" as const, inputs: [] },
 ] as const;
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -143,48 +145,12 @@ export function leagueIdToBytes32(uuid: string): `0x${string}` {
 }
 
 /**
- * Three-step create: register league on-chain, approve USDC, deposit.
- * Used only by the creator on league creation.
- */
-export function buildCreateLeagueCalls(leagueUuid: string, entryFeeUsdc: number): Call[] {
-  const entryFeeRaw   = BigInt(Math.round(entryFeeUsdc * 1_000_000));
-  // User pays entryFee + 5% platform fee; approve the total
-  const approveAmount = BigInt(Math.round(entryFeeUsdc * 1.05 * 1_000_000));
-  const leagueBytes32 = leagueIdToBytes32(leagueUuid);
-
-  const createCall: Call = {
-    to: POOL_ADDRESS,
-    data: encodeFunctionData({
-      abi: PREDICTION_POOL_ABI,
-      functionName: "createLeague",
-      args: [leagueBytes32, entryFeeRaw],
-    }),
-  };
-
-  const approveCall: Call = {
-    to: USDC_ADDRESS,
-    data: encodeFunctionData({
-      abi: ERC20_ABI,
-      functionName: "approve",
-      args: [POOL_ADDRESS, approveAmount],
-    }),
-  };
-
-  const depositCall: Call = {
-    to: POOL_ADDRESS,
-    data: encodeFunctionData({
-      abi: PREDICTION_POOL_ABI,
-      functionName: "deposit",
-      args: [leagueBytes32],
-    }),
-  };
-
-  return [createCall, approveCall, depositCall];
-}
-
-/**
  * Two-step deposit: approve USDC allowance, then call pool.deposit(leagueId).
  * Pass both calls to <Transaction calls={buildDepositCalls(...)} />.
+ *
+ * NOTE: on-chain league registration (pool.createLeague) is `onlyOwner` and is
+ * done server-side by the pool signer in registerLeagueOnChain — never bundled
+ * into a player-signed call, which would revert with NotOwner.
  */
 export function buildDepositCalls(leagueUuid: string, entryFeeUsdc: number): Call[] {
   // User pays entryFee + 5% platform fee; approve the total
