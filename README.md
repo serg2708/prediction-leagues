@@ -217,7 +217,7 @@ supabase/schema.sql + migrations/   # Schema, indexes, RLS, SECURITY DEFINER fun
 
 | Item | Address |
 |---|---|
-| `PredictionPoolFee.sol` | `0x34034Abfb4A370BDe22Aa8B9F71B08b43A4Cf96C` |
+| `PredictionPoolFee.sol` | `0xf3485e4318b41CbC3a058010bD1338C415acb446` |
 | USDC (Sepolia) | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
 | USDC (mainnet) | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
 
