@@ -292,7 +292,7 @@ async function onChainPayout(leagueUuid: string, winnerAddresses: string[], shar
     // Persist the confirmed tx hash so the slot is permanently locked
     await supabase
       .from("leagues")
-      .update({ payout_tx_hash: receipt.transactionHash, payout_error: null })
+      .update({ payout_tx_hash: receipt.transactionHash, payout_error: null, needs_refund: false })
       .eq("id", leagueUuid);
     console.log(`Payout tx confirmed: ${receipt.transactionHash}`);
   } catch (err) {

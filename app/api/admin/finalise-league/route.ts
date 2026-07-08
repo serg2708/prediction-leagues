@@ -225,7 +225,7 @@ export async function POST(req: NextRequest) {
     // Persist the confirmed hash so the slot stays permanently locked
     await supabase
       .from("leagues")
-      .update({ payout_tx_hash: txHash, payout_error: null })
+      .update({ payout_tx_hash: txHash, payout_error: null, needs_refund: false })
       .eq("id", league_id);
     console.log(`[finalise-league] Payout tx: ${txHash}`);
   } catch (err) {
