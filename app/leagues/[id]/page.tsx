@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { leaveLeagueAction } from "@/app/actions/leave-league";
+import { BottomNav } from "@/app/components/BottomNav";
 import { useLeague } from "@/lib/hooks/useLeague";
 import { usePredictions } from "@/lib/hooks/usePredictions";
 import { useProfile } from "@/lib/hooks/useProfile";
@@ -445,6 +446,7 @@ export default function LeaguePage() {
           )
         )}
       </div>
+      <BottomNav />
     </div>
   );
 }

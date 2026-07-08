@@ -366,7 +366,8 @@
 /* ── Floating CTA ────────────────────────────────────────── */
 .floatingCta {
   position: fixed;
-  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  /* sits above the bottom nav */
+  bottom: calc(92px + env(safe-area-inset-bottom, 0px));
   left: 50%;
   transform: translateX(-50%);
   width: calc(100% - 32px);
@@ -456,7 +457,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 4px 0 8px;
+  margin: 12px 16px 0;
 }
 
 .leaveBtn {
