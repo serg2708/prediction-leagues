@@ -79,8 +79,10 @@ export async function fetchCs2Matches(tournament?: string): Promise<MatchRow[]> 
   const apiKey = process.env.PANDASCORE_API_KEY;
   if (!apiKey) throw new Error("PANDASCORE_API_KEY not set");
 
+  // NOTE: the tournament-scoped matches route only exists on the generic
+  // /tournaments namespace — /csgo/tournaments/{slug}/matches is a 404.
   const url = tournament
-    ? `https://api.pandascore.co/csgo/tournaments/${encodeURIComponent(tournament)}/matches?per_page=20&sort=begin_at`
+    ? `https://api.pandascore.co/tournaments/${encodeURIComponent(tournament)}/matches?per_page=20&sort=begin_at`
     : "https://api.pandascore.co/csgo/matches/upcoming?per_page=10&sort=begin_at";
 
   const res = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } });
