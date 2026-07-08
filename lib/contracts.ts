@@ -96,6 +96,30 @@ export const PREDICTION_POOL_ABI = [
     stateMutability: "nonpayable",
   },
   {
+    name: "refundPlayer",
+    type: "function" as const,
+    inputs: [
+      { name: "leagueId", type: "bytes32" },
+      { name: "player",   type: "address" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    name: "claimPending",
+    type: "function" as const,
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    name: "pendingOf",
+    type: "function" as const,
+    inputs: [{ name: "player", type: "address" }],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
     name: "hasDeposited",
     type: "function" as const,
     inputs: [{ name: "leagueId", type: "bytes32" }, { name: "player", type: "address" }],
@@ -130,6 +154,9 @@ export const PREDICTION_POOL_ABI = [
   { name: "TransferFailed",   type: "error" as const, inputs: [] },
   { name: "NotDepositor",     type: "error" as const, inputs: [] },
   { name: "BadShares",        type: "error" as const, inputs: [] },
+  { name: "InvalidFee",       type: "error" as const, inputs: [] },
+  { name: "LeagueLocked",     type: "error" as const, inputs: [] },
+  { name: "NothingPending",   type: "error" as const, inputs: [] },
 ] as const;
 
 // ── Helpers ────────────────────────────────────────────────────────────────

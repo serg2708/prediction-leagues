@@ -38,6 +38,11 @@ contract PredictionPoolFee {
 
     mapping(bytes32 => League) private leagues;
 
+    /// USDC pushes that failed (blacklisted / reverting recipient) are parked
+    /// here instead of reverting the whole settlement. Pull-claimable by the
+    /// recipient; owner can redirect for wallets that can never receive.
+    mapping(address => uint256) public pendingOf;
+
     // ── Events ─────────────────────────────────────────────────────────────
 
     event LeagueCreated(bytes32 indexed leagueId, uint96 entryFee);
@@ -46,6 +51,8 @@ contract PredictionPoolFee {
     event PayoutMultiple(bytes32 indexed leagueId, address[] winners, uint256 shareEach);
     event PayoutSplit(bytes32 indexed leagueId, address[] winners, uint16[] sharesBps);
     event Refunded(bytes32 indexed leagueId, address indexed player, uint256 amount);
+    event TransferDeferred(address indexed to, uint256 amount);
+    event PendingClaimed(address indexed player, address indexed to, uint256 amount);
     event OwnershipTransferred(address indexed prev, address indexed next);
     event FeeRecipientUpdated(address indexed prev, address indexed next);
 
@@ -60,6 +67,9 @@ contract PredictionPoolFee {
     error TransferFailed();
     error NotDepositor();
     error BadShares();
+    error InvalidFee();
+    error LeagueLocked();
+    error NothingPending();
 
     // ── Modifiers ──────────────────────────────────────────────────────────
 
@@ -77,10 +87,38 @@ contract PredictionPoolFee {
         feeRecipient = _feeRecipient;
     }
 
+    // ── Internal ───────────────────────────────────────────────────────────
+
+    /**
+     * @dev Push USDC without letting one bad recipient (USDC blacklist,
+     *      reverting contract) revert an entire settlement. On failure the
+     *      amount is parked in `pendingOf[to]` for a later pull-claim.
+     */
+    function _tryTransfer(address to, uint256 amount) internal returns (bool ok) {
+        if (amount == 0) return true;
+        (bool success, bytes memory data) = address(usdc).call(
+            abi.encodeWithSelector(usdc.transfer.selector, to, amount)
+        );
+        ok = success && (data.length == 0 || abi.decode(data, (bool)));
+        if (!ok) {
+            pendingOf[to] += amount;
+            emit TransferDeferred(to, amount);
+        }
+    }
+
     // ── Admin ──────────────────────────────────────────────────────────────
 
+    /**
+     * @notice Register a league. A league that already holds deposits or has
+     *         been settled is immutable — re-registering it (e.g. with a
+     *         different fee) would desync refund amounts from what players
+     *         actually paid.
+     */
     function createLeague(bytes32 leagueId, uint96 entryFee) external onlyOwner {
-        leagues[leagueId].entryFee = entryFee;
+        if (entryFee == 0) revert InvalidFee();
+        League storage league = leagues[leagueId];
+        if (league.pool != 0 || league.paid || league.voided) revert LeagueLocked();
+        league.entryFee = entryFee;
         emit LeagueCreated(leagueId, entryFee);
     }
 
@@ -170,9 +208,9 @@ contract PredictionPoolFee {
                 ? total - distributed
                 : (total * sharesBps[i]) / 10_000;
             distributed += amount;
-            if (amount > 0) {
-                if (!usdc.transfer(winners[i], amount)) revert TransferFailed();
-            }
+            // One blacklisted/reverting winner must not block the others —
+            // their share is parked in pendingOf instead.
+            _tryTransfer(winners[i], amount);
         }
     }
 
@@ -206,10 +244,44 @@ contract PredictionPoolFee {
             league.pool -= amount;
 
             emit Refunded(leagueId, p, amount);
-            if (amount > 0) {
-                if (!usdc.transfer(p, amount)) revert TransferFailed();
-            }
+            // Parked in pendingOf on failure — the rest of the batch continues.
+            _tryTransfer(p, amount);
         }
+    }
+
+    /**
+     * @notice Refund a single player WITHOUT voiding the league — used for a
+     *         player-initiated exit before the league starts. The backend (owner)
+     *         enforces the "before start" rule off-chain and removes membership.
+     *         Returns the player's entryFee; the 5% fee is not refundable.
+     */
+    function refundPlayer(bytes32 leagueId, address player) external onlyOwner {
+        League storage league = leagues[leagueId];
+        if (league.entryFee == 0)         revert LeagueNotFound();
+        if (league.paid || league.voided) revert AlreadyPaid();
+        if (!league.deposited[player])    revert NotDepositor();
+
+        league.deposited[player] = false;
+
+        uint256 amount = league.entryFee;
+        if (amount > league.pool) amount = league.pool;
+        league.pool -= amount;
+
+        emit Refunded(leagueId, player, amount);
+        _tryTransfer(player, amount);
+    }
+
+    /**
+     * @notice Redirect a parked (failed-push) balance for a wallet that can
+     *         never receive USDC (e.g. blacklisted) to a replacement address.
+     */
+    function redirectPending(address player, address to) external onlyOwner {
+        if (to == address(0)) revert ZeroAddress();
+        uint256 amount = pendingOf[player];
+        if (amount == 0) revert NothingPending();
+        pendingOf[player] = 0;
+        emit PendingClaimed(player, to, amount);
+        if (!usdc.transfer(to, amount)) revert TransferFailed();
     }
 
     function transferOwnership(address newOwner) external onlyOwner {
@@ -244,9 +316,22 @@ contract PredictionPoolFee {
 
         emit Deposited(leagueId, msg.sender, league.entryFee, fee);
 
-        // Pull total from user, forward fee immediately
+        // Pull total from user (must succeed), then forward the fee. The fee
+        // push is best-effort: a problem with feeRecipient must never brick
+        // deposits — it parks in pendingOf[feeRecipient] instead.
         if (!usdc.transferFrom(msg.sender, address(this), total)) revert TransferFailed();
-        if (!usdc.transfer(feeRecipient, fee))                    revert TransferFailed();
+        _tryTransfer(feeRecipient, fee);
+    }
+
+    /**
+     * @notice Claim a balance parked by a failed settlement push.
+     */
+    function claimPending() external {
+        uint256 amount = pendingOf[msg.sender];
+        if (amount == 0) revert NothingPending();
+        pendingOf[msg.sender] = 0;
+        emit PendingClaimed(msg.sender, msg.sender, amount);
+        if (!usdc.transfer(msg.sender, amount)) revert TransferFailed();
     }
 
     // ── Views ──────────────────────────────────────────────────────────────

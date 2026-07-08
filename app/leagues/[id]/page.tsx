@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { leaveLeagueAction } from "@/app/actions/leave-league";
 import { useLeague } from "@/lib/hooks/useLeague";
 import { usePredictions } from "@/lib/hooks/usePredictions";
 import { useProfile } from "@/lib/hooks/useProfile";
@@ -184,6 +185,19 @@ export default function LeaguePage() {
   const standingsStats = useStandingsStats(id, matches);
   const [activeTab, setActiveTab] = useState<"matches" | "standings" | "history">("matches");
   const [copied, setCopied] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const [leaveErr, setLeaveErr] = useState<string | null>(null);
+
+  const leaveLeague = useCallback(async () => {
+    if (!league) return;
+    if (!confirm(`Leave "${league.name}"? Your $${league.entry_fee_usdc} entry is refunded (the 5% platform fee is not).`)) return;
+    setLeaving(true);
+    setLeaveErr(null);
+    const res = await leaveLeagueAction(league.id);
+    setLeaving(false);
+    if (res.ok) router.push("/");
+    else setLeaveErr(res.error ?? "Failed to leave");
+  }, [league, router]);
 
   const share = useCallback(async () => {
     if (!league) return;
@@ -232,6 +246,15 @@ export default function LeaguePage() {
   const openMatches    = matches.filter((m) => m.status === "upcoming" || m.status === "live");
   const pastMatches    = matches.filter((m) => m.status === "finished" || m.status === "abandoned");
   const hasPredictable = matches.some((m) => m.status === "upcoming");
+
+  // Self-exit window: before anything has kicked off, while the league is
+  // still pending. Server re-checks authoritatively in leaveLeagueAction.
+  const now = Date.now();
+  const canLeave =
+    !!me &&
+    league.status === "pending" &&
+    pastMatches.length === 0 &&
+    !matches.some((m) => m.status === "live" || new Date(m.starts_at).getTime() <= now);
 
   return (
     <div className={styles.container}>
@@ -294,6 +317,20 @@ export default function LeaguePage() {
         <div className={styles.waitingBanner}>
           <Clock size={16} />
           <span>Waiting for {minPlayers - members.length} more player{minPlayers - members.length !== 1 ? "s" : ""} — predictions locked until {minPlayers} have joined</span>
+        </div>
+      )}
+
+      {canLeave && (
+        <div className={styles.leaveRow}>
+          <button
+            type="button"
+            className={styles.leaveBtn}
+            disabled={leaving}
+            onClick={leaveLeague}
+          >
+            {leaving ? "Leaving…" : "Leave league & get refund"}
+          </button>
+          {leaveErr && <span className={styles.leaveErr}>{leaveErr}</span>}
         </div>
       )}
 
