@@ -8,15 +8,10 @@
  * GET /api/cron/notify-upcoming
  * Authorization: Bearer <CRON_SECRET>
  */
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { requireCron } from "@/lib/server-auth";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
-);
 
 const ORIGIN = process.env.NEXT_PUBLIC_URL ?? "http://localhost:3000";
 

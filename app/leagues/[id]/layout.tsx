@@ -1,10 +1,5 @@
 import type { Metadata } from "next";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
-);
+import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 
 const SPORT_EMOJI: Record<string, string> = { football: "⚽", cs2: "🎮", nba: "🏀" };
 

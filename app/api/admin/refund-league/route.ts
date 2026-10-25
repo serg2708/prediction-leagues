@@ -7,7 +7,7 @@
  * Headers: Authorization: Bearer <ADMIN_SECRET>  (or admin_session cookie)
  * Body: { league_id: string }
  */
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { createPublicClient, createWalletClient, http, isAddress } from "viem";
@@ -15,11 +15,6 @@ import { privateKeyToAccount } from "viem/accounts";
 import { base, baseSepolia } from "viem/chains";
 import { leagueIdToBytes32, POOL_ADDRESS, PREDICTION_POOL_ABI } from "@/lib/contracts";
 import { requireAdmin } from "@/lib/server-auth";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
-);
 
 export async function POST(req: NextRequest) {
   const authErr = requireAdmin(req);

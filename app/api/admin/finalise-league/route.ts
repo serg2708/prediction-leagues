@@ -7,7 +7,7 @@
  * Headers: Authorization: Bearer <ADMIN_SECRET>
  * Body: { league_id: string }
  */
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { createPublicClient, createWalletClient, http, isAddress } from "viem";
@@ -16,11 +16,6 @@ import { base, baseSepolia } from "viem/chains";
 import { PREDICTION_POOL_ABI, POOL_ADDRESS, leagueIdToBytes32 } from "@/lib/contracts";
 import { computePayoutAmounts, computePayoutShares } from "@/lib/payout-shares";
 import { requireAdmin } from "@/lib/server-auth";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
-);
 
 const ORIGIN = process.env.NEXT_PUBLIC_URL ?? "http://localhost:3000";
 

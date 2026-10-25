@@ -1,10 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import { fetchCs2Matches, fetchFootballMatches, fetchNbaMatches, type MatchRow } from "@/lib/fetch-matches";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
-);
 
 export type SyncLeagueRef = {
   id: string;

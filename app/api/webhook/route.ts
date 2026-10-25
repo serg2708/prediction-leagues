@@ -6,15 +6,9 @@
  * Set webhookUrl in minikit.config.ts to: <YOUR_URL>/api/webhook
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
-// Use service-role key on the server so RLS doesn't block token writes
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
-);
 
 // Notification URLs must match one of these Farcaster domains (M3: SSRF protection)
 const ALLOWED_NOTIFY_HOSTS = new Set([

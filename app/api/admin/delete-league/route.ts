@@ -5,15 +5,10 @@
  * Only deletes pending leagues with no on-chain deposits (pool_usdc = 0).
  * Refuses if the league is active or finished to prevent fund loss.
  */
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/server-auth";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
-);
 
 export async function DELETE(req: NextRequest) {
   const authErr = requireAdmin(req);

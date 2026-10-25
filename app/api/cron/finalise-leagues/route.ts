@@ -10,17 +10,12 @@
  * GET /api/cron/finalise-leagues
  * Headers: Authorization: Bearer <CRON_SECRET>
  */
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { reconcileLeaguePool } from "@/lib/reconcile";
 import { requireCron } from "@/lib/server-auth";
 import { syncLeaguesGrouped } from "@/lib/sync-leagues";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
-);
 
 const ORIGIN = process.env.NEXT_PUBLIC_URL ?? "http://localhost:3000";
 

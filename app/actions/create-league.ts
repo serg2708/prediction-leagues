@@ -1,17 +1,12 @@
 "use server";
 
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import { after } from "next/server";
 import { syncLeagueMatches } from "@/app/actions/sync-matches";
 import { getSessionAddress } from "@/lib/session";
 import type { Sport } from "@/lib/types";
 import { receiptHasDeposit } from "@/lib/verify-deposit";
 import { getPublicClient } from "@/lib/viem-server";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
-);
 
 /**
  * Persist the league row BEFORE the creator's deposit tx. Closes a gap where a

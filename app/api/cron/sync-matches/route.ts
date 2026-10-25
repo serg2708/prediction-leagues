@@ -5,16 +5,11 @@
  * GET /api/cron/sync-matches
  * Headers: Authorization: Bearer <CRON_SECRET>
  */
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { requireCron } from "@/lib/server-auth";
 import { syncLeaguesGrouped, type SyncLeagueRef } from "@/lib/sync-leagues";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
-);
 
 export async function GET(req: NextRequest) {
   const authErr = requireCron(req);

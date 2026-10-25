@@ -7,7 +7,7 @@
  * the Farcaster notification endpoint.
  * Protected by NOTIFY_SECRET to prevent abuse.
  */
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { requireNotify } from "@/lib/server-auth";
@@ -22,11 +22,6 @@ function isAllowedNotifyUrl(raw: string): boolean {
     return false;
   }
 }
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
-);
 
 interface NotifyRequest {
   fids: number[];
