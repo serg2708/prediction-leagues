@@ -14,14 +14,14 @@
   "dependencies": {
     "@coinbase/onchainkit": "latest",
     "@farcaster/miniapp-sdk": "^0.1.8",
-    "@supabase/supabase-js": "^2.100.1",
-    "@tanstack/react-query": "^5.81.5",
+    "@supabase/supabase-js": "^2.118.0",
+    "@tanstack/react-query": "^5.104.5",
     "form-data": "^2.5.6",
-    "next": "^16.2.9",
+    "next": "^16.4.3",
     "ox": "^0.14.10",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "viem": "^2.31.6",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "viem": "^2.57.11",
     "wagmi": "^2.16.3"
   },
   "devDependencies": {
