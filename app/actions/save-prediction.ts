@@ -1,13 +1,8 @@
 "use server";
 
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import { getSessionAddress } from "@/lib/session";
 import type { PredictionOutcome } from "@/lib/types";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
-);
 
 export async function savePredictionAction(
   matchId: string,

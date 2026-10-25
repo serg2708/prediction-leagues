@@ -9,15 +9,10 @@
  * Headers: X-PandaScore-Token: <PANDASCORE_WEBHOOK_SECRET>
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import type { PredictionOutcome } from "@/lib/types";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
-);
 
 const ORIGIN = process.env.NEXT_PUBLIC_URL ?? "http://localhost:3000";
 

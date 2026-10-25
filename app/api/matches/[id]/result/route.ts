@@ -7,7 +7,7 @@
  * Body: { result: "home" | "draw" | "away" | "team1" | "team2",
  *         score_home?: number, score_away?: number }
  */
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import { type NextRequest, NextResponse } from "next/server";
 import { createPublicClient, createWalletClient, http, isAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -17,11 +17,6 @@ import { computePayoutAmounts, computePayoutShares } from "@/lib/payout-shares";
 import { requireAdmin } from "@/lib/server-auth";
 
 const VALID_OUTCOMES = new Set<string>(["home", "draw", "away", "team1", "team2"]);
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
-);
 
 const ORIGIN = process.env.NEXT_PUBLIC_URL ?? "http://localhost:3000";
 
